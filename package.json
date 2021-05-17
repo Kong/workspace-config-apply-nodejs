@@ -1,0 +1,28 @@
+{
+  "name": "workspace-config-apply-nodejs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sreekaluvai/workspace-config-apply-nodejs.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sreekaluvai/workspace-config-apply-nodejs/issues"
+  },
+  "homepage": "https://github.com/sreekaluvai/workspace-config-apply-nodejs#readme",
+  "dependencies": {
+    "js-yaml": "^4.1.0",
+    "async": "^3.2.0",
+    "axios": "^0.21.1",
+    "dotenv": "^9.0.2",
+    "package.json": "^2.0.1",
+    "pkg.json": "^2.0.1"
+  }
+}

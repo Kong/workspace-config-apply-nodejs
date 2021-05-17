@@ -1,0 +1,34 @@
+workspaces:
+  - name: demoone
+    config:
+      portal: false
+    rbac:
+    - role: readonlyrole
+      permissions:
+      - endpoint: "*"
+        negative: false
+        actions: "read"
+      users:
+      - username: "test@email.com"
+        email: "test@email.com"
+    plugins:
+    - name: "prometheus"
+    - name: "correlation-id"
+      config:
+        header_name: "Kong-Request-ID"
+        generator: "uuid#counter"
+        echo_downstream: false
+  - name: demotwo
+    config:
+      portal: false
+    rbac:
+    - role: adminrole
+      permissions:
+      - endpoint: "*"
+        negative: false
+        actions: "*"
+      users:
+      - username: "testtwo@email.com"
+        email: "testtwo@email.com" 
+    plugins:
+    - name: "prometheus"
