@@ -8,15 +8,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sreekaluvai/workspace-config-apply-nodejs.git"
+    "url": "git+https://github.com/Kong/workspace-config-apply-nodejs.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/sreekaluvai/workspace-config-apply-nodejs/issues"
+    "url": "https://github.com/Kong/workspace-config-apply-nodejs/issues"
   },
-  "homepage": "https://github.com/sreekaluvai/workspace-config-apply-nodejs#readme",
+  "homepage": "https://github.com/Kong/workspace-config-apply-nodejs#readme",
   "dependencies": {
     "js-yaml": "^4.1.0",
     "async": "^3.2.0",
