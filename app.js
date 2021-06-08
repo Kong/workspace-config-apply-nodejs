@@ -2,7 +2,7 @@ const yaml = require('js-yaml');
 const fs = require('fs');
 const axios = require('axios');
 require('dotenv').config();
-
+const https = require("https");
 
 (async () => {
   try {
@@ -15,8 +15,15 @@ require('dotenv').config();
     var permissionsEndpoint = '/endpoints';
     var adminEndpoint = '/admins';
     var pluginsEndpoint = '/plugins';
-    let fileContents = fs.readFileSync('./config/workspaces.yaml', 'utf8');
+
+    let configDir = './config/workspaces.yaml';
+    if (process.env.CONFIG_DIR) {
+      configDir = process.env.CONFIG_DIR;
+    }
+    
+    let fileContents = fs.readFileSync(configDir, 'utf8');
     let workspacesinput = yaml.load(fileContents);
+
     var headers = {
       headers: {
         'Kong-Admin-Token': process.env.ADMIN_TOKEN,
@@ -26,6 +33,12 @@ require('dotenv').config();
     var kongaddr = 'http://localhost:8001'
     if (process.env.KONG_ADDR) {
       kongaddr = process.env.KONG_ADDR;
+    }
+
+    if (process.env.CA) {
+      axios.defaults.httpsAgent = new https.Agent({
+      ca: fs.readFileSync(process.env.CA),
+      });
     }
 
     for (var workspace of workspacesinput.workspaces) {
@@ -133,8 +146,11 @@ async function handlePlugins(workspace, res, kongaddr, workspacename, pluginsEnd
         res = await axios.delete(kongaddr + '/' + workspacename + pluginsEndpoint + '/' + oldPlugin.id, headers);
       }
     }
-    for (var plugin of workspace.plugins) {
-      res = await axios.post(kongaddr + '/' + workspacename + pluginsEndpoint, plugin, headers);
+
+    if (workspace.plugins) {
+      for (var plugin of workspace.plugins) {
+        res = await axios.post(kongaddr + '/' + workspacename + pluginsEndpoint, plugin, headers);
+      }
     }
   } catch (e) {
     console.log(e.stack);
