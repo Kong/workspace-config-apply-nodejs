@@ -1,4 +1,5 @@
 const yaml = require('js-yaml');
+const handlebars= require('handlebars');
 const fs = require('fs');
 const axios = require('axios');
 require('dotenv').config();
@@ -17,12 +18,33 @@ const https = require("https");
     var pluginsEndpoint = '/plugins';
 
     let configDir = './config/workspaces.yaml';
+    let configHbs='./config/workspace-template.hbs'
+    let configData ='./config/workspace-data.json'
+
+    handlebars.registerHelper('ifEquals', function(arg1, arg2) {
+      return (arg1 == arg2)
+  });
+
+ 
+
     if (process.env.CONFIG_DIR) {
       configDir = process.env.CONFIG_DIR;
     }
     
     let fileContents = fs.readFileSync(configDir, 'utf8');
-    let workspacesinput = yaml.load(fileContents);
+
+    let hbs= fs.readFileSync(configHbs, 'utf8');
+
+    let template = handlebars.compile(hbs);
+    let data = fs.readFileSync(configData, 'utf8');
+
+    if(process.env.DATA_FILE){
+      data=fs.readFileSync(process.env.DATA_FILE, 'utf8');
+    }
+    data = JSON.parse(data);
+    var result = template(data);
+    console.log(result);
+    let workspacesinput = yaml.load(result);
 
     var headers = {
       headers: {
@@ -38,6 +60,7 @@ const https = require("https");
     if (process.env.CA) {
       axios.defaults.httpsAgent = new https.Agent({
       ca: fs.readFileSync(process.env.CA),
+      rejectUnauthorized: process.env.SSL_VERIFY?process.env.sslVerify:true
       });
     }
 
@@ -153,7 +176,7 @@ async function handlePlugins(workspace, res, kongaddr, workspacename, pluginsEnd
       }
     }
   } catch (e) {
-    console.log(e.stack);
+    console.log('plugin deployment failed: ' + e.stack);
   }
   return res;
 }

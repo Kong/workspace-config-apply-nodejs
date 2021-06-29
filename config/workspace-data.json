@@ -1,0 +1,36 @@
+{
+    "ws": [
+      {
+        "name": "hsbc-zeta",
+        "readonly-users" : [ {"name": "whatever-121", "email": "whatever121@gmail.com"}, {"name": "whatever-122", "email": "whatever122@gmail.com"}],
+        "admin-users" : [ {"name": "admin-121", "email": "admin121@gmail.com"}, {"name": "admin-122", "email": "admin122@gmail.com"}],
+        "super-admin-users" : [ {"name": "sa-121", "email": "sa121@gmail.com"}, {"name": "sa-122", "email": "sa122@gmail.com"}],
+        "plugins": 
+        {
+            "file-log-path": "/dev/stdout",
+            "rate-limiting-advanced-strategy": "redis", 
+            "rate-limiting-advanced-limit": [10,20],
+            "rate-limiting-advanced-window": [60,120],
+            "rate-limiting-advanced-redis-host": "redis.kong-hybrid-dp.svc.cluster.local",
+            "rate-limiting-advanced-redis-port": "6379",
+            "correlation-id-header-name":"Kong-Request-ID"
+
+        }
+      },
+      {
+        "name": "hsbc-eta",
+        "readonly-users" : [ {"name": "whatever-125", "email": "whatever125@gmail.com"}, {"name": "whatever-126", "email": "whatever126@gmail.com"}],
+        "admin-users" : [ {"name": "admin-125", "email": "admin125@gmail.com"}],
+        "super-admin-users" : [ {"name": "sa-125", "email": "sa125@gmail.com"}],
+        "plugins": 
+        {
+            "file-log-path": "/dev/stdout",
+            "rate-limiting-advanced-strategy": "cluster", 
+            "rate-limiting-advanced-limit": [10],
+            "rate-limiting-advanced-window": [60],
+            "correlation-id-header-name":"Kong-Request-ID"
+
+        }
+      }
+    ]
+  }

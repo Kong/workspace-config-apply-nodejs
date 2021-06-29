@@ -1,3 +1,7 @@
 .DS_Store
 node_modules
 .env
+config/workspaces-all-roles.yaml
+.vscode/launch.json
+package-lock.json
+package-lock.json

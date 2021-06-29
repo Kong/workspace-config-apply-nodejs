@@ -18,5 +18,17 @@ This module uses the Admin API for updating Kong workspace config.
 ### Run
 
 ``` bash
+npm install
+
+add a .env file.
+
+add ADMIN_TOKEN=<token-here>
+Other optional parametres to add in .env
+    CA ( default null)
+    CONFIG_DIR (default ./config/workspaces.yaml) Defunct in this version.
+    KONG_ADDR ( default http://localhost:8001)
+    DATA_FILE ( default ./config/workspace-data.json)
+    SSL_VERIFY ( default true)
+
 node app.js
 ```

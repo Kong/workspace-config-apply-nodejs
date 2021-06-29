@@ -1,0 +1,79 @@
+workspaces:
+   {{#each ws}}
+  - name: {{this.name}}
+    config:
+      portal: false
+    rbac:
+    - role: readonlyrole
+      permissions:
+      - endpoint: "*"
+        negative: false
+        actions: "read"
+      users:
+      {{#each this.readonly-users}}
+      - username: {{name}}
+        email: {{email}}
+      {{/each}}
+    - role: superadmin 
+      permissions:
+      - endpoint: "*"
+        negative: false
+        actions: "create,update,read,delete"
+      users:
+      {{#each this.super-admin-users}}
+      - username: {{name}}
+        email: {{email}}
+      {{/each}}
+    - role: admin
+      permissions:
+      - endpoint: "*"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/rbac/*"
+        negative: true 
+        actions: "create,update,read,delete"
+      - endpoint: "/rbac/*/*"
+        negative: true 
+        actions: "create,update,read,delete"
+      - endpoint: "/rbac/*/*/*"
+        negative: true 
+        actions: "create,update,read,delete"
+      - endpoint: "/rbac/*/*/*/*"
+        negative: true 
+        actions: "create,update,read,delete"
+      - endpoint: "/rbac/*/*/*/*/*"
+        negative: true 
+        actions: "create,update,read,delete"
+      users:
+      {{#each this.admin-users}}
+      - username: {{name}}
+        email: {{email}}
+      {{/each}}
+    plugins:
+    - name: "file-log"
+      config:
+        path: {{this.plugins.file-log-path}}
+        reopen: false
+    - name: "rate-limiting-advanced"
+      config:
+        limit:
+        {{#each this.plugins.rate-limiting-advanced-limit}}
+          - {{this}}
+        {{/each}}
+        window_size:
+        {{#each this.plugins.rate-limiting-advanced-window}}
+          - {{this}}
+        {{/each}}
+        strategy: {{this.plugins.rate-limiting-advanced-strategy}}
+        {{#if (ifEquals this.plugins.rate-limiting-advanced-strategy "redis")}}
+        redis:
+          host: {{this.plugins.rate-limiting-advanced-redis-host}}
+          port: {{this.plugins.rate-limiting-advanced-redis-port}}
+        {{/if}}
+        sync_rate: 1
+    - name: "correlation-id"
+      config:
+        header_name: {{this.plugins.correlation-id-header-name}}
+        generator: "uuid#counter"
+        echo_downstream: false
+   {{/each}}
