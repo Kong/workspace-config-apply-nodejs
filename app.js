@@ -1,5 +1,5 @@
 const yaml = require('js-yaml');
-const handlebars= require('handlebars');
+const handlebars = require('handlebars');
 const fs = require('fs');
 const axios = require('axios');
 require('dotenv').config();
@@ -18,30 +18,27 @@ const https = require("https");
     var pluginsEndpoint = '/plugins';
 
     let configDir = './config/workspaces.yaml';
-    let configHbs='./config/workspace-template.hbs'
-    let configData ='./config/workspace-data.json'
+    let configHbs = './config/workspace-template.hbs'
+    let configData = './config/workspace-data.json'
 
     handlebars.registerHelper('ifEquals', function(arg1, arg2) {
       return (arg1 == arg2)
   });
 
- 
+  if (process.env.CONFIG_DIR) {
+    configDir = process.env.CONFIG_DIR;
+  }
+  let fileContents = fs.readFileSync(configDir, 'utf8');
 
-    if (process.env.CONFIG_DIR) {
-      configDir = process.env.CONFIG_DIR;
-    }
-    
-    let fileContents = fs.readFileSync(configDir, 'utf8');
+  let hbs = fs.readFileSync(configHbs, 'utf8');
 
-    let hbs= fs.readFileSync(configHbs, 'utf8');
+  let template = handlebars.compile(hbs);
+  let data = fs.readFileSync(configData, 'utf8');
 
-    let template = handlebars.compile(hbs);
-    let data = fs.readFileSync(configData, 'utf8');
-
-    if(process.env.DATA_FILE){
-      data=fs.readFileSync(process.env.DATA_FILE, 'utf8');
-    }
-    data = JSON.parse(data);
+  if(process.env.DATA_FILE){
+    data =fs.readFileSync(process.env.DATA_FILE, 'utf8');
+  }
+  data = JSON.parse(data);
     var result = template(data);
     console.log(result);
     let workspacesinput = yaml.load(result);

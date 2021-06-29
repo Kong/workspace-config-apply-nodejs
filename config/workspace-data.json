@@ -1,7 +1,7 @@
 {
     "ws": [
       {
-        "name": "hsbc-zeta",
+        "name": "workspace-zeta",
         "readonly-users" : [ {"name": "whatever-121", "email": "whatever121@gmail.com"}, {"name": "whatever-122", "email": "whatever122@gmail.com"}],
         "admin-users" : [ {"name": "admin-121", "email": "admin121@gmail.com"}, {"name": "admin-122", "email": "admin122@gmail.com"}],
         "super-admin-users" : [ {"name": "sa-121", "email": "sa121@gmail.com"}, {"name": "sa-122", "email": "sa122@gmail.com"}],
@@ -18,7 +18,7 @@
         }
       },
       {
-        "name": "hsbc-eta",
+        "name": "workspace-eta",
         "readonly-users" : [ {"name": "whatever-125", "email": "whatever125@gmail.com"}, {"name": "whatever-126", "email": "whatever126@gmail.com"}],
         "admin-users" : [ {"name": "admin-125", "email": "admin125@gmail.com"}],
         "super-admin-users" : [ {"name": "sa-125", "email": "sa125@gmail.com"}],
