@@ -1,6 +1,3 @@
-workspaces:
-   {{#each ws}}
-  - name: {{this.name}}
     config:
       portal: false
     rbac:
@@ -9,21 +6,11 @@ workspaces:
       - endpoint: "*"
         negative: false
         actions: "read"
-      users:
-      {{#each this.readonly-users}}
-      - username: {{name}}
-        email: {{email}}
-      {{/each}}
     - role: superadmin 
       permissions:
       - endpoint: "*"
         negative: false
         actions: "create,update,read,delete"
-      users:
-      {{#each this.super-admin-users}}
-      - username: {{name}}
-        email: {{email}}
-      {{/each}}
     - role: admin
       permissions:
       - endpoint: "*"
@@ -44,36 +31,27 @@ workspaces:
       - endpoint: "/rbac/*/*/*/*/*"
         negative: true 
         actions: "create,update,read,delete"
-      users:
-      {{#each this.admin-users}}
-      - username: {{name}}
-        email: {{email}}
-      {{/each}}
     plugins:
     - name: "file-log"
       config:
-        path: {{this.plugins.file-log-path}}
+        path: /dev/stdout
         reopen: false
     - name: "rate-limiting-advanced"
       config:
         limit:
-        {{#each this.plugins.rate-limiting-advanced-limit}}
-          - {{this}}
-        {{/each}}
+          - 10
+          - 20
         window_size:
-        {{#each this.plugins.rate-limiting-advanced-window}}
-          - {{this}}
-        {{/each}}
-        strategy: {{this.plugins.rate-limiting-advanced-strategy}}
-        {{#if (ifEquals this.plugins.rate-limiting-advanced-strategy "redis")}}
+          - 60
+          - 120
+        strategy: redis
         redis:
-          host: {{this.plugins.rate-limiting-advanced-redis-host}}
-          port: {{this.plugins.rate-limiting-advanced-redis-port}}
-        {{/if}}
+          host: redis.kong-hybrid-dp.svc.cluster.local
+          port: 6479
         sync_rate: 1
     - name: "correlation-id"
       config:
-        header_name: {{this.plugins.correlation-id-header-name}}
+        header_name: Kong-Request-ID
         generator: "uuid#counter"
         echo_downstream: false
-   {{/each}}
+  

@@ -24,21 +24,24 @@ const https = require("https");
     handlebars.registerHelper('ifEquals', function(arg1, arg2) {
       return (arg1 == arg2)
   });
+  handlebars.registerHelper('ifNotNull', function(arg1) {
+    return (arg1 !== null)
+});
 
-  if (process.env.CONFIG_DIR) {
-    configDir = process.env.CONFIG_DIR;
-  }
+  // if (process.env.CONFIG_DIR) {
+  //   configDir = process.env.CONFIG_DIR;
+  // }
   let fileContents = fs.readFileSync(configDir, 'utf8');
 
   let hbs = fs.readFileSync(configHbs, 'utf8');
 
   let template = handlebars.compile(hbs);
-  let data = fs.readFileSync(configData, 'utf8');
+  let dataFile= fs.readFileSync(configData, 'utf8');
 
   if(process.env.DATA_FILE){
-    data =fs.readFileSync(process.env.DATA_FILE, 'utf8');
+    dataFile =fs.readFileSync(process.env.DATA_FILE, 'utf8');
   }
-  data = JSON.parse(data);
+  data = JSON.parse(dataFile);
     var result = template(data);
     console.log(result);
     let workspacesinput = yaml.load(result);
@@ -88,6 +91,9 @@ const https = require("https");
       }
       console.log(workspacename + " created and config applied sucessfully");
     }
+   
+    fs.writeFileSync(configDir, result )
+    console.log('config.yaml stored in' + configDir);
   } catch (e) {
     console.log(e.stack);
   }
@@ -101,31 +107,35 @@ async function handleRbac(res, kongaddr, headers, workspacename, workspace, role
     res = await axios.delete(kongaddr + '/' + workspacename + rbacEndpoint + rolesEndpoint + '/' + oldRole.name, headers);
   }
   for (var rbac of workspace.rbac) {
-    rolename = rbac.role;
-    var roledata = {
-      'name': rolename
-    };
-    try {
-      res = await axios.get(kongaddr + '/' + workspacename + rbacEndpoint + rolesEndpoint + '/' + rolename, headers);
-      var currentPermissions = await axios.get(kongaddr + '/' + workspacename + rbacEndpoint + rolesEndpoint + '/' + rolename + permissionsEndpoint, headers);
-      for (var oldPermission of currentPermissions.data.data) {
-        res = await axios.delete(kongaddr + '/' + workspacename + rbacEndpoint + rolesEndpoint + '/' + rolename + permissionsEndpoint + '/' + workspacename + '/' + oldPermission.endpoint, headers);
-      }
-      for (var permissions of rbac.permissions) {
-        res = await axios.post(kongaddr + '/' + workspacename + rbacEndpoint + rolesEndpoint + '/' + rolename + permissionsEndpoint, permissions, headers);
-        res = await handleUsers(rbac, res, kongaddr, workspacename, adminEndpoint, headers, rolename, rolesEndpoint);
-      }
-    } catch (e) {
-      if (e.response.status == 404) {
-        res = await axios.post(kongaddr + '/' + workspacename + rbacEndpoint + rolesEndpoint, roledata, headers);
+    if(rbac.users)
+    {
+      rolename = rbac.role;
+      var roledata = {
+        'name': rolename
+      };
+      try {
+        res = await axios.get(kongaddr + '/' + workspacename + rbacEndpoint + rolesEndpoint + '/' + rolename, headers);
+        var currentPermissions = await axios.get(kongaddr + '/' + workspacename + rbacEndpoint + rolesEndpoint + '/' + rolename + permissionsEndpoint, headers);
+        for (var oldPermission of currentPermissions.data.data) {
+          res = await axios.delete(kongaddr + '/' + workspacename + rbacEndpoint + rolesEndpoint + '/' + rolename + permissionsEndpoint + '/' + workspacename + '/' + oldPermission.endpoint, headers);
+        }
         for (var permissions of rbac.permissions) {
           res = await axios.post(kongaddr + '/' + workspacename + rbacEndpoint + rolesEndpoint + '/' + rolename + permissionsEndpoint, permissions, headers);
+          res = await handleUsers(rbac, res, kongaddr, workspacename, adminEndpoint, headers, rolename, rolesEndpoint);
         }
-        res = await handleUsers(rbac, res, kongaddr, workspacename, adminEndpoint, headers, rolename, rolesEndpoint);
-      } else {
-        console.log(e.stack);
+      
+      } catch (e) {
+        if (e.response.status == 404) {
+          res = await axios.post(kongaddr + '/' + workspacename + rbacEndpoint + rolesEndpoint, roledata, headers);
+          for (var permissions of rbac.permissions) {
+            res = await axios.post(kongaddr + '/' + workspacename + rbacEndpoint + rolesEndpoint + '/' + rolename + permissionsEndpoint, permissions, headers);
+          }
+          res = await handleUsers(rbac, res, kongaddr, workspacename, adminEndpoint, headers, rolename, rolesEndpoint);
+        } else {
+          console.log(e.stack);
+        }
       }
-    }
+    5}
   }
   return { res, rolename };
 }
