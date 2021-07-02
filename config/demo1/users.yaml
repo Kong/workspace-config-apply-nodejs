@@ -16,3 +16,11 @@
   email: whatever75641@gmail12.com
   roles:
   - prodreadonly
+- name: whatever8-6412
+  email: whatever756412@gmail12.com
+  roles:
+  - prodreadonly
+- name: admin5-6412
+  email: admin5642@gmail12.com
+  roles:
+  - admin

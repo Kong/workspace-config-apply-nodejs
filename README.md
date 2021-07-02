@@ -29,13 +29,17 @@ In ./config folder, you will need to have a folder that corresponds to a new or 
 		- users.yaml ( all user configs) 
 		-workspace.yaml ( all workspace, role and plugin configuration) 
 	- workspace2 ( directory. This will be the workspace name) 
-			- users.yaml ( all user configs)
-			-workspace.yaml ( all workspace, role and plugin configuration)
+        - users.yaml ( all user configs)
+        -workspace.yaml ( all workspace, role and plugin configuration)
 
 Run
 `npm install
-``node configurator.js [argument]``
+``node configurator.js [argument] [optional: workspacename]``
 *Command line argument 
  0 Default (Add all). 
  1 Add Workspace + plugin. 
  2 Add Users only.``*
+
+If no workspace is provided, then the script will run for all workspaces in the /config folder.
+
+

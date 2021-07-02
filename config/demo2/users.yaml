@@ -20,3 +20,7 @@
   email: mockadmin6432@gmail12.com
   roles:
   - readonlyrole
+- name: admin5-6412
+  email: admin5642@gmail12.com
+  roles:
+  - admin

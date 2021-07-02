@@ -4,6 +4,8 @@ const axios = require('axios');
 require('dotenv').config();
 const https = require("https");
 const path= require('path');
+const logger = require('node-color-log');
+const { lookup } = require('dns');
 
 const workspaceEndpoint = '/workspaces';
 const rbacEndpoint = '/rbac';
@@ -31,10 +33,18 @@ const userNameConfigName = "users.yaml";
     */
    // With Node Js first command is node and second is the app file name. Any additional command is index position 2.
 
-    console.log(    "Command line argument \n 0 Default (Add all). \n 1 Add Workspace + plugin. \n 2 Add Users only.");
+    logger.info(    "Command line argument \n 0 Default (Add all). \n 1 Add Workspace + plugin. \n 2 Add Users only.");
     let command = process.argv[2]?process.argv[2]:0;
-    console.log('Argument: ' + command );
-    
+    logger.info('Argument: ' + command );
+    if(! ["0","1","2"].includes(command.toString())){
+      logger.error("Invalid argument passed.")
+      process.exit("0");
+    }
+
+    // if workspace name is passed as second argument, then it will run Configurations for that workspace only. If not, for all workspaces found under config folder.
+
+    let selectedWorkspace = process.argv[3]?process.argv[3]:"all";
+    logger.info('Selected Workspace: ' + selectedWorkspace );
     //config  directory is either hard coded to ./config or passed in env variable.
       let configDir = './config/';
     if (process.env.CONFIG_DIR) {
@@ -68,45 +78,47 @@ const userNameConfigName = "users.yaml";
 
     for(dir in dirs)
     {
-      // looping through folders
-      var workSpaceConfig = yaml.load(fs.readFileSync(path.resolve(configDir,dirs[dir],workSpaceConfigName), 'utf8'));
-      var userNameConfig = yaml.load(fs.readFileSync(path.resolve(configDir,dirs[dir],userNameConfigName), 'utf8'));
-      
-      var workspacedata = {'name': dirs[dir],'config': workSpaceConfig.config}
-      var res = '';
+      if(!selectedWorkspace == "all" || selectedWorkspace.trim() == dirs[dir]){
+        // looping through folders
+        var workSpaceConfig = yaml.load(fs.readFileSync(path.resolve(configDir,dirs[dir],workSpaceConfigName), 'utf8'));
+        var userNameConfig = yaml.load(fs.readFileSync(path.resolve(configDir,dirs[dir],userNameConfigName), 'utf8'));
+        
+        var workspacedata = {'name': dirs[dir],'config': workSpaceConfig.config}
+        var res = '';
 
-        try {
-          res = await axios.get(kongaddr + workspaceEndpoint + '/' + workspacedata.name, headers);
-          if (res.status == 200) {
-            if(command==0 || command==1){
-              // all or workspace + pluggin
-              console.log('Workspace ' + workspacedata.name + ' exists. Reapplying config ')
-              res = await axios.patch(kongaddr + workspaceEndpoint + '/' + workspacedata.name, workspacedata, headers);
-              console.log('Workspace ' + workspacedata.name + ' config reapplied.');
-              res= await applyRbac(res, kongaddr, headers, workspacedata.name, workSpaceConfig.rbac,false);
-              res= await applyPlugins(res, kongaddr,workspacedata.name,workSpaceConfig.plugins,headers, false );
+          try {
+            res = await axios.get(kongaddr + workspaceEndpoint + '/' + workspacedata.name, headers);
+            if (res.status == 200) {
+              if(command==0 || command==1){
+                // all or workspace + pluggin
+                logger.warn('Workspace ' + workspacedata.name + ' exists. Reapplying config ')
+                res = await axios.patch(kongaddr + workspaceEndpoint + '/' + workspacedata.name, workspacedata, headers);
+                logger.info('Workspace ' + workspacedata.name + ' config reapplied.');
+                res= await applyRbac(res, kongaddr, headers, workspacedata.name, workSpaceConfig.rbac,false);
+                res= await applyPlugins(res, kongaddr,workspacedata.name,workSpaceConfig.plugins,headers, false );
+              }
+              if(command == 0 || command == 2) // users
+                applyUsers(res,kongaddr,workspacedata.name,headers,userNameConfig,false )
+                
             }
-            if(command == 0 || command == 2) // users
-              applyUsers(res,kongaddr,workspacedata.name,headers,userNameConfig,false )
-              
-          }
-  
-        } catch (e) {
-          if (e.response.status == 404) {
-            if(command==0 || command==1){
-              console.log('Workspace ' + workspacedata.name + ' does not exist. Creating .... ')
-              res = await axios.post(kongaddr + workspaceEndpoint, workspacedata, headers);
-              console.log('Workspace ' + workspacedata.name + ' created.')
-              res= await applyRbac(res, kongaddr, headers, workspacedata.name, workSpaceConfig.rbac);
-              res= await applyPlugins(res, kongaddr,workspacedata.name,workSpaceConfig.plugins,headers );
-            if(command == 0 || command == 2) // users
-              applyUsers(res,kongaddr,workspacedata.name,headers,userNameConfig )
+    
+          } catch (e) {
+            if (e.response.status == 404) {
+              if(command==0 || command==1){
+                logger.info('Workspace ' + workspacedata.name + ' does not exist. Creating .... ')
+                res = await axios.post(kongaddr + workspaceEndpoint, workspacedata, headers);
+                logger.info('Workspace ' + workspacedata.name + ' created.')
+                res= await applyRbac(res, kongaddr, headers, workspacedata.name, workSpaceConfig.rbac);
+                res= await applyPlugins(res, kongaddr,workspacedata.name,workSpaceConfig.plugins,headers );
+              if(command == 0 || command == 2) // users
+                applyUsers(res,kongaddr,workspacedata.name,headers,userNameConfig )
+              }
+            } else {
+              logger.error(e.stack);
             }
-          } else {
-            console.log(e.stack);
           }
         }
-
+        else{ logger.warn('Skipping wrokspace ' + dirs[dir])}
       }
       
 
@@ -115,9 +127,9 @@ const userNameConfigName = "users.yaml";
   
   
   } catch (e) {
-    console.log(e.stack);
+    logger.error(e.stack);
   }
-  
+   
 })();
 
 async function applyRbac(res, kongaddr, headers, workspacename, rbac, isNew=true) {
@@ -142,7 +154,7 @@ async function applyRbac(res, kongaddr, headers, workspacename, rbac, isNew=true
         res = await axios.post(kongaddr + '/' + workspacename + rbacEndpoint + rolesEndpoint + '/' + roleDetail.role + permissionsEndpoint, permission, headers);
       }
     }
-    console.log('all roles and permissions successfully applied for the workspace ' + workspacename );
+    logger.info('all roles and permissions successfully applied for the workspace ' + workspacename );
 
 }
 
@@ -159,7 +171,7 @@ async function applyPlugins(res, kongaddr, workspacename, plugins, headers, isNe
         if (oldPlugin.route == null && oldPlugin.service == null) {
           res = await axios.delete(kongaddr + '/' + workspacename + pluginsEndpoint + '/' + oldPlugin.id, headers);
         }else{
-          console.log('plugin ' + oldPlugin.name + ' has service or route associated with it. can not be deleted');
+          logger.error('plugin ' + oldPlugin.name + ' has service or route associated with it. can not be deleted');
         }
       }
    
@@ -172,10 +184,10 @@ async function applyPlugins(res, kongaddr, workspacename, plugins, headers, isNe
       }
   }
 
-  console.log('plugins has been successfully applied for the workspace ' + workspacename );
+  logger.info('plugins has been successfully applied for the workspace ' + workspacename );
     
   } catch (e) {
-    console.log('plugin deployment failed: ' + e.stack);
+    logger.error('plugin deployment failed: ' + e.stack);
   }
   return res;
 }
@@ -183,25 +195,31 @@ async function applyPlugins(res, kongaddr, workspacename, plugins, headers, isNe
 
 
 async function applyUsers(res, kongaddr, workspacename,  headers, users) {
-  console.log('starting to add users in the workspace ' + workspacename)
+  logger.info('starting to add users in the workspace ' + workspacename)
   for (var user of users) {
     var userdata = {"username": user.name, "email" : user.email};
    
     try {
       res = await axios.get(kongaddr + '/' + workspacename + adminEndpoint + '/' + user.name, headers);
       if (res.status == 200) {//user exists
-        console.log(' User ' + user.name + ' exists in' +  workspacename)
+        logger.warn(' User ' + user.name + ' exists in ' +  workspacename)
         res = await axios.patch(kongaddr + '/' + workspacename + adminEndpoint + '/' + user.name, user, headers);
-        console.log(' For user ' + user.name + ' config reapplied in ' + workspacename);
+        logger.info(' For user ' + user.name + ' config reapplied in ' + workspacename);
  
       }
     } catch (e) {
       if (e.response.status == 404) {
         // add new user
-        res = await axios.post(kongaddr + '/' + workspacename + adminEndpoint , userdata, headers);
-        console.log(' User ' + user.name + ' added in' + workspacename);
+        try{
+          res = await axios.post(kongaddr + '/' + workspacename + adminEndpoint , userdata, headers);
+        }catch(e){
+          if(e.response.status == 409){
+            logger.warn(' User ' + user.name + ' exists in another workspace' )
+          }else{ logger.error(e);}
+        }
+        logger.info(' User ' + user.name + ' added in' + workspacename);
       } else {
-        console.log(e.stack);
+        logger.error(e.stack);
       }
     }
     
@@ -209,12 +227,12 @@ async function applyUsers(res, kongaddr, workspacename,  headers, users) {
       for (var role of user.roles) {
         try{
           res = await axios.post(kongaddr + '/' + workspacename + adminEndpoint + '/' + user.name + rolesEndpoint, {"roles" : role}, headers);
-          console.log(' Role ' + role + ' added for user ' + user.name  + ' in ' + workspacename);
+          logger.info(' Role ' + role + ' added for user ' + user.name  + ' in ' + workspacename);
           
         }catch(e){
           if(e.response.data.code == 3) { //role exists
-            console.log(' Role ' + role + ' already present for user ' + user.name + ' in ' + workspacename);
-          }else{ console.log(e);}
+            logger.warn(' Role ' + role + ' already present for user ' + user.name + ' in ' + workspacename);
+          }else{ logger.error(e);}
         }
       }
 
@@ -235,10 +253,10 @@ async function applyUsers(res, kongaddr, workspacename,  headers, users) {
 
       for (var admin of adminsNotInList) {
         res = await axios.delete(kongaddr + '/' + workspacename + adminEndpoint + '/' + admin , headers);
-        console.log(' User ' + admin + ' does not exist in users.yaml so is being deleted in workspace ' + workspacename)
+        logger.warn(' User ' + admin + ' does not exist in users.yaml so is being deleted in workspace ' + workspacename)
       }
     }catch(e){
-      console.log(' Deletetion of old roles failed. ' + e )
+      logger.error(' Deletetion of old roles failed. ' + e )
     }
   
   return res;
