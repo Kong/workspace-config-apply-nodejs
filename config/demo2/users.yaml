@@ -1,0 +1,26 @@
+---
+- name: whatever-6412
+  email: whatever641@gmail12.com
+  roles:
+  - readonlyrole
+- name: whatever-6422
+  email: whatever642@gmail12.com
+  roles:
+  - readonlyrole
+- name: admin-6412
+  email: admin642@gmail12.com
+  roles:
+  - admin
+- name: sa-5412
+  email: sa6412@gmail12.com
+  roles:
+  - superadmin
+  - admin
+- name: mock-admin-6432
+  email: mockadmin6432@gmail12.com
+  roles:
+  - readonlyrole
+- name: admin5-6412
+  email: admin5642@gmail12.com
+  roles:
+  - admin
