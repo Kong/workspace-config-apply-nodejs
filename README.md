@@ -103,7 +103,7 @@ permissions:
 
 #### Admin role
 
-Allows a user read/write access to all entities in the workspace, with the exception of modifying RBAC permissions and users
+Allows a user read/write access to all entities in the workspace, with the exception of modifying RBAC permissions and users.
 
 ``` yaml
  permissions:
