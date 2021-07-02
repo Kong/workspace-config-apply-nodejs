@@ -34,7 +34,7 @@ In ./config folder, you will need to have a folder that corresponds to a new or 
 
 Run
 `npm install
-``node configurator.js [argument] [optional: workspacename]``
+``node configurator.js [optional: argument] [optional: workspacename]``
 *Command line argument 
  0 Default (Add all). 
  1 Add Workspace + plugin. 

@@ -78,7 +78,7 @@ const userNameConfigName = "users.yaml";
 
     for(dir in dirs)
     {
-      if(!selectedWorkspace == "all" || selectedWorkspace.trim() == dirs[dir]){
+      if(selectedWorkspace == "all" || selectedWorkspace.trim() == dirs[dir]){
         // looping through folders
         var workSpaceConfig = yaml.load(fs.readFileSync(path.resolve(configDir,dirs[dir],workSpaceConfigName), 'utf8'));
         var userNameConfig = yaml.load(fs.readFileSync(path.resolve(configDir,dirs[dir],userNameConfigName), 'utf8'));
