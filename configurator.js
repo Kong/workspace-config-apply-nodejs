@@ -152,6 +152,7 @@ async function applyRbac(res, kongaddr, headers, workspacename, rbac, isNew=true
       res = await axios.post(kongaddr + '/' + workspacename + rbacEndpoint + rolesEndpoint, roledata, headers);
       for (var permission of roleDetail.permissions) {
         res = await axios.post(kongaddr + '/' + workspacename + rbacEndpoint + rolesEndpoint + '/' + roleDetail.role + permissionsEndpoint, permission, headers);
+        logger.info( "Permission " + JSON.stringify(permission) + ' added for role ' + roleDetail.role + ' in workspace '  + workspacename);
       }
     }
     logger.info('all roles and permissions successfully applied for the workspace ' + workspacename );
@@ -217,7 +218,7 @@ async function applyUsers(res, kongaddr, workspacename,  headers, users) {
             logger.warn(' User ' + user.name + ' exists in another workspace' )
           }else{ logger.error(e);}
         }
-        logger.info(' User ' + user.name + ' added in' + workspacename);
+        logger.info(' User ' + user.name + ' added in ' + workspacename);
       } else {
         logger.error(e.stack);
       }
