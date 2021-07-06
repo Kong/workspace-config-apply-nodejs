@@ -2,7 +2,7 @@
   "name": "workspace-config-apply-nodejs",
   "version": "1.0.0",
   "description": "",
-  "main": "app.js",
+  "main": "configurator.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -21,7 +21,6 @@
     "async": "^3.2.0",
     "axios": "^0.21.1",
     "dotenv": "^9.0.2",
-    "handlebars": "^4.7.7",
     "js-yaml": "^4.1.0",
     "node-color-log": "^5.3.1",
     "package.json": "^2.0.1",

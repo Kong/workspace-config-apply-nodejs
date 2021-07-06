@@ -12,8 +12,5 @@
   roles:
   - superadmin
   - admin
-- name: demo1prodread1
-  email: demo1prodread1@gmail12.com
-  roles:
-  - prodreadonly
+
   
