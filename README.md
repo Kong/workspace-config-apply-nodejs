@@ -53,6 +53,6 @@ node configurator.js 1 demo1 (create workspace for demo1).
 node configurator.js 1       (create workspace configs for all workspaces).   
 node configurator.js 2 demo1 ( add/remove users for demo1).   
 node configurator.js 2       ( add/remove users for all).   
-node node configurator.js 3  ( add groups).   
+node configurator.js 3  ( add groups).   
 
 
