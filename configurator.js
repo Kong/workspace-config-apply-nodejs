@@ -4,7 +4,6 @@ const axios = require('axios');
 require('dotenv').config();
 const https = require("https");
 const path= require('path');
-const { group } = require('console');
 
 
 
@@ -22,7 +21,7 @@ const userNameConfigName = "users.yaml";
 const rootWorkSpaceConfig = "root-workspace.yaml";
 const groupConfig = "groups-and-roles.yaml"
 
-const log_lib = process.env.LOG_LIB? process.env.LOG_LIB :"node-color-log";
+const log_lib = require( process.env.LOG_LIB? process.env.LOG_LIB :"node-color-log");
 (async () => {
   try {
     var workspacename;
@@ -40,7 +39,7 @@ const log_lib = process.env.LOG_LIB? process.env.LOG_LIB :"node-color-log";
 
    logInfo("Command line argument \n 0 Default (Add all). \n 1 Add Workspace + plugin. \n 2 Add Users only. \n 3 Add Groups only.");
   
-    let command = process.argv[2]?process.argv[2]:2;
+    let command = process.argv[2]?process.argv[2]:3;
     logInfo('Argument: ' + command );
     if(! ["0","1","2","3"].includes(command.toString())){
       logError("Invalid argument passed.")
@@ -312,9 +311,6 @@ async function applyGroups(configDir, path, kongaddr, headers, res){
                 var groupRoles = await axios.get(kongaddr + groupEndpoint + "/" +  groupInfo.group_name +  rolesEndpoint , headers);
                 for(var role of groupRoles.data.data){
                   logInfo("role " + role.rbac_role.name + " exists for workspace with id : " +  role.workspace.id );
-                  //TODO : delete existing roles.
-                  // var deleteData = { "workspace_id": role.workspace.id , "rbac_role_id" : role.rbac_role.id}
-                  // res = await axios.delete(kongaddr + groupEndpoint + "/" +  groupId  +  rolesEndpoint , deleteData, headers);
                 }
               }catch(ex){logError(ex)};
 
@@ -327,7 +323,7 @@ async function applyGroups(configDir, path, kongaddr, headers, res){
           var workspaces = await axios.get(kongaddr + workspaceEndpoint , headers);
           // get group id. By this time, the group shall exist.
           if(!groupId)   
-            (await axios.get(kongaddr + groupEndpoint + "/" + groupInfo.group_name, headers)).data.id;
+            groupId = (await axios.get(kongaddr + groupEndpoint + "/" + groupInfo.group_name, headers)).data.id;
           for(var role of groupInfo.roles){
             try{
               // get workspace that matches with the name in yaml groups.roles.workspace.
@@ -347,7 +343,7 @@ async function applyGroups(configDir, path, kongaddr, headers, res){
                       logError(e.response.data.message);
                   else {
                     //Safe to ignore. Just that the role/worksapce combination exists
-                    logError(e.response.data.message);
+                    //logError(e.response.data.message);
                     }
                   
                 }
@@ -371,8 +367,8 @@ async function  getDirectories(path) {
 async function  logInfo  (logtext){
     if (logtext){
       try{
-        var lib = require(log_lib);
-        lib.info(logtext);
+        //var lib = require(log_lib);
+        log_lib.info(logtext);
         }
       catch(e){
           console.info(logtext)
@@ -383,8 +379,8 @@ async function  logInfo  (logtext){
   async function  logWarn  (logtext){
     if (logtext){
       try{
-            var lib = require(log_lib);
-            lib.warn(logtext);
+            //var lib = require(log_lib);
+            log_lib.warn(logtext);
         }
       catch(e){
           console.warn(logtext)
@@ -395,8 +391,8 @@ async function  logInfo  (logtext){
   async function  logError (logtext){
     if (logtext){
       try{
-            var lib = require(log_lib);
-            lib.error(logtext);
+            //var lib = require(log_lib);
+            log_lib.error(logtext);
         }
       catch(e){
           console.error(logtext)
