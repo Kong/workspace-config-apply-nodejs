@@ -171,7 +171,7 @@ async function applyPlugins(res, kongaddr, workspacename, plugins, headers, isNe
         if (oldPlugin.route == null && oldPlugin.service == null) {
           res = await axios.delete(kongaddr + '/' + workspacename + pluginsEndpoint + '/' + oldPlugin.id, headers);
         }else{
-          logger.error('plugin ' + oldPlugin.name + ' has service or route associated with it. can not be deleted');
+          logger.info('plugin ' + oldPlugin.name + ' is not globally scoped. Skipping deletion');
         }
       }
    
