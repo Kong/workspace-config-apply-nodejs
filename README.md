@@ -22,21 +22,19 @@ CA ( default null)
 CONFIG_DIR (default ./config/)   
 KONG_ADDR ( default http://localhost:8001)   
 SSL_VERIFY ( default true)  
-ADMIN_TOKEN=password
-CONFIG_DIR=./config/
-LOG_LIB= node-color-log (logging lib)
+LOG_LIB= node-color-log (logging lib)  
 FEATURE_DELETE_EXISTING_USERS=false (if true, will remove admin users from workspace that are not present in users.yaml)  
 
 In ./config folder, you will need to have a folder that corresponds to a new or existing workspace you would like to configure. Each workspace folder structure will be like this below.  
 
-./config 
-	root-workspace ( default workspace config. )
-	- workspace1 ( directory. This will be the workspace name) 
-		- users.yaml ( all user configs) 
-		-workspace.yaml ( all workspace, role and plugin configuration. If exists, will overwrite root config) 
-	- workspace2 ( directory. This will be the workspace name) 
-        - users.yaml ( all user configs)
-        -workspace.yaml ( all workspace, role and plugin configuration.  If exists, will overwrite root config)
+./config.  
+	root-workspace ( default workspace config. ).   
+	**- workspace1 ( directory. This will be the workspace name).**     
+			- users.yaml ( all user configs).   
+			-workspace.yaml ( all workspace, role and plugin configuration. If exists, will overwrite root config).  
+	**- workspace2 ( directory. This will be the workspace name).**
+			- users.yaml ( all user configs).    
+			-workspace.yaml ( all workspace, role and plugin configuration.  If exists, will overwrite root config).   
 
 Run
 `npm install
@@ -48,5 +46,13 @@ Run
  3 Add Groups only.  
 
 If no workspace is provided, then the script will run for all workspaces in the /config folder.
+
+**Examples**
+
+node configurator.js 1 demo1 (create workspace for demo1).    
+node configurator.js 1       (create workspace configs for all workspaces).   
+node configurator.js 2 demo1 ( add/remove users for demo1).   
+node configurator.js 2       ( add/remove users for all).   
+node node configurator.js 3  ( add groups).   
 
 
