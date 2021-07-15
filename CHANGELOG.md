@@ -12,6 +12,6 @@
 
 💥 Breaking changes: workspaces.yaml is no longer valid
 
-🆕 New features: hbs template and json workspace data file will generate the yaml on the fly.
+🆕 New features: Complete redesign
 
 🔧 Fixes: none.

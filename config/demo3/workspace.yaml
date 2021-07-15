@@ -1,16 +1,11 @@
     config:
-      portal: false
+      portal: true
     rbac:
     - role: readonlyrole
       permissions:
       - endpoint: "*"
         negative: false
         actions: "read"
-    - role: superadmin 
-      permissions:
-      - endpoint: "*"
-        negative: false
-        actions: "create,update,read,delete"
     - role: admin
       permissions:
       - endpoint: "*"
@@ -31,16 +26,38 @@
       - endpoint: "/rbac/*/*/*/*/*"
         negative: true 
         actions: "create,update,read,delete"
-    - role: prodreadonly
+    - role: superadmin2
       permissions:
       - endpoint: "*"
         negative: false
-        actions: "read"
+        actions: "create,update,delete"
+      - endpoint: "/admins/*"
+        negative: true 
+        actions: "create,update,read,delete"
+      - endpoint: "/admin/*/roles"
+        negative: true 
+        actions: "create,update,read,delete"
+      - endpoint: "/rbac/*"
+        negative: true 
+        actions: "create,update,read,delete"
     plugins:
     - name: "file-log"
       config:
         path: /dev/stdout
         reopen: false
+    - name: "rate-limiting-advanced"
+      config:
+        limit:
+          - 10
+          - 20
+        window_size:
+          - 60
+          - 120
+        strategy: redis
+        redis:
+          host: redis.kong-hybrid-dp.svc.cluster.local
+          port: 6479
+        sync_rate: 1
     - name: "correlation-id"
       config:
         header_name: Kong-Request-ID
