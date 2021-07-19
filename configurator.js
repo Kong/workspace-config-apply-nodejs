@@ -297,7 +297,7 @@ async function applyGroups(configDir, path, kongaddr, headers, res){
   var groupConf = yaml.load(fs.readFileSync(path.resolve(configDir,groupConfig), 'utf8'));
  
     for(var groupInfo of groupConf){
-      var groupId;
+      let groupId;
       try{
         var groupData = { "name" : groupInfo.group_name, "comment": groupInfo.group_comment };
         res = await axios.post(kongaddr + groupEndpoint, groupData, headers);
