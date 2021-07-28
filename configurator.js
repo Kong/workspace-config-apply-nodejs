@@ -39,7 +39,7 @@ const log_lib = require( process.env.LOG_LIB? process.env.LOG_LIB :"node-color-l
 
    logInfo("Command line argument \n 0 Default (Add all). \n 1 Add Workspace + plugin. \n 2 Add Users only. \n 3 Add Groups only.");
   
-    let command = process.argv[2]?process.argv[2]:3;
+    let command = process.argv[2]?process.argv[2]:1;
     logInfo('Argument: ' + command );
     if(! ["0","1","2","3"].includes(command.toString())){
       logError("Invalid argument passed.")
@@ -62,6 +62,12 @@ const log_lib = require( process.env.LOG_LIB? process.env.LOG_LIB :"node-color-l
         'validateStatus': false
       }
     };
+    // Set Proxy if needed.
+    if (process.env.PROXY){
+      headers.proxy = await parseProxyNoAuth(process.env.PROXY);
+    }
+
+    // 
 
     //Kong admin api  is either hard coded or passed in env variable.
     var kongaddr = 'http://localhost:8001'
@@ -74,6 +80,16 @@ const log_lib = require( process.env.LOG_LIB? process.env.LOG_LIB :"node-color-l
       ca: fs.readFileSync(process.env.CA),
       rejectUnauthorized: process.env.SSL_VERIFY?process.env.sslVerify:true
       });
+    }
+
+    // test connectivity to admin API
+    try
+    {
+        var ping = await axios.get(kongaddr + "/status", headers);
+        logInfo('Kong Status: ' +  JSON.stringify(ping.data));
+    }catch(e){
+      logError('Ping to Admin API failed. Please check setting for your admin API or proxy. ' + e);
+      process.exit(2);
     }
 
     // delete existing users?
@@ -121,6 +137,8 @@ const log_lib = require( process.env.LOG_LIB? process.env.LOG_LIB :"node-color-l
             if (e.response.status == 404) {
               if(command==0 || command==1){
                 logInfo('Workspace ' + workspacedata.name + ' does not exist. Creating .... ')
+                logInfo(kongaddr + workspaceEndpoint);
+                logInfo()
                 res = await axios.post(kongaddr + workspaceEndpoint, workspacedata, headers);
                 logInfo('Workspace ' + workspacedata.name + ' created.')
                 res= await applyRbac(res, kongaddr, headers, workspacedata.name, workSpaceConfig.rbac);
@@ -399,4 +417,23 @@ async function  logInfo  (logtext){
       }
 
     }
+  }
+
+  async function parseProxyNoAuth(proxyString){
+
+    try
+    {
+      //example: http://proxyhost:port
+      let proxyParts = proxyString.split("//");
+      let protocol = proxyParts[0];
+      let hostParts = proxyParts[1].split(":");
+      let host =hostParts[0];
+      let port =hostParts[1];
+      var proxy =  { "protocol" : protocol, "host": host, "port" : port };
+      return proxy
+    }catch(e){
+      logError("possible malformed proxy setting. " + e );
+    }
+
+
   }

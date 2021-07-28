@@ -24,6 +24,7 @@ KONG_ADDR ( default http://localhost:8001)
 SSL_VERIFY ( default true)  
 LOG_LIB= node-color-log (logging lib)  
 FEATURE_DELETE_EXISTING_USERS=false (if true, will remove admin users from workspace that are not present in users.yaml)  
+PROXY=Any forwward proxy to set for the tool to access the Admin API. Example: http://proxyhost:port. Default NOT SET.
 
 In ./config folder, you will need to have a folder that corresponds to a new or existing workspace you would like to configure. Each workspace folder structure will be like this below.  
 
@@ -53,6 +54,6 @@ node configurator.js 1 demo1 (create workspace for demo1).
 node configurator.js 1       (create workspace configs for all workspaces).   
 node configurator.js 2 demo1 ( add/remove users for demo1).   
 node configurator.js 2       ( add/remove users for all).   
-node configurator.js 3  ( add groups).   
+node configurator.js 3  	 ( add groups).   
 
 
