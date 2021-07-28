@@ -138,7 +138,6 @@ const log_lib = require( process.env.LOG_LIB? process.env.LOG_LIB :"node-color-l
               if(command==0 || command==1){
                 logInfo('Workspace ' + workspacedata.name + ' does not exist. Creating .... ')
                 logInfo(kongaddr + workspaceEndpoint);
-                logInfo()
                 res = await axios.post(kongaddr + workspaceEndpoint, workspacedata, headers);
                 logInfo('Workspace ' + workspacedata.name + ' created.')
                 res= await applyRbac(res, kongaddr, headers, workspacedata.name, workSpaceConfig.rbac);
