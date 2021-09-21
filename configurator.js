@@ -15,12 +15,14 @@ const permissionsEndpoint = '/endpoints';
 const adminEndpoint = '/admins';
 const pluginsEndpoint = '/plugins';
 const groupEndpoint = "/groups";
+const authEndpoint = "/auth"
+
 const workSpaceConfigName = "workspace.yaml";
 const pluginConfigName = "plugins.yaml";
 const userNameConfigName = "users.yaml";
 const rootWorkSpaceConfig = "root-workspace.yaml";
 const groupConfig = "groups-and-roles.yaml"
-
+const cookier_header_name = "admin_session"
 const log_lib = require( process.env.LOG_LIB? process.env.LOG_LIB :"node-color-log");
 (async () => {
   try {
@@ -39,7 +41,7 @@ const log_lib = require( process.env.LOG_LIB? process.env.LOG_LIB :"node-color-l
 
    logInfo("Command line argument \n 0 Default (Add all). \n 1 Add Workspace + plugin. \n 2 Add Users only. \n 3 Add Groups only.");
   
-    let command = process.argv[2]?process.argv[2]:3;
+    let command = process.argv[2]?process.argv[2]:1;
     logInfo('Argument: ' + command );
     if(! ["0","1","2","3"].includes(command.toString())){
       logError("Invalid argument passed.")
@@ -55,13 +57,47 @@ const log_lib = require( process.env.LOG_LIB? process.env.LOG_LIB :"node-color-l
     if (process.env.CONFIG_DIR) {
       configDir = process.env.CONFIG_DIR;
     }
-    // admin token passed in env variable
-    var headers = {
-      headers: {
-        'Kong-Admin-Token': process.env.ADMIN_TOKEN,
-        'validateStatus': false
+
+    //check auth method . Session cookie(COOKIE) or rbac token ( RBAC)
+    if (!process.env.AUTH_METHOD){
+      logError("Env variable AUTH_METHOD must be set");
+      process.exit("1");
+    }
+    var headers = {};
+    if(process.env.AUTH_METHOD == 'RBAC'){
+      logInfo("RBAC method of authentication selected");
+      // admin token passed in env variable
+      headers = {
+        headers: {
+          'Kong-Admin-Token': process.env.ADMIN_TOKEN,
+          'validateStatus': false
+        }
+      };
+    }else if (process.env.AUTH_METHOD == 'PASSWORD'){
+      logInfo("PASSWORD method of authentication selected.");
+      if(!process.env.ADMIN_USER || !process.env.BASE64_UID_PWD){
+        logError("Env variable ADMIN_USER and BASE64_UID_PWD must be set when AUTH_METHOD is set to PASSWORD. BASE64_UID_PWD should be base64(username:password");
+        process.exit("1");
       }
-    };
+
+      headers = {
+        headers: {
+          'Kong-Admin-User': process.env.ADMIN_USER,
+          'Authorization': " Basic " + process.env.BASE64_UID_PWD,
+          'validateStatus': false
+        }
+      };
+
+    }
+    else{
+      logError("Please check process.env.AUTH_METHOD");
+    }
+    // Set Proxy if needed.
+    if (process.env.PROXY){
+      headers.proxy = await parseProxyNoAuth(process.env.PROXY);
+    }
+
+
 
     //Kong admin api  is either hard coded or passed in env variable.
     var kongaddr = 'http://localhost:8001'
@@ -76,8 +112,33 @@ const log_lib = require( process.env.LOG_LIB? process.env.LOG_LIB :"node-color-l
       });
     }
 
+    axios.defaults.httpsAgent = new https.Agent({rejectUnauthorized : false});
+    if (process.env.AUTH_METHOD == 'PASSWORD'){
+        // get auth cookie
+        logInfo("Calling auth endpoint..");
+        try{
+          var auth = await axios.get(kongaddr + authEndpoint, headers);
+          headers.headers.Cookie=auth.headers['set-cookie'];
+          //dont need the auth header anymore now that we have the cookie
+          delete headers.headers["Authorization"];
+        }catch(e){
+          logError("Auth method failed. Please check credential passed in BASE64_UID_PWD or your connectivity to admin api");
+          process.exit(1);
+        }
+    }
+    
+    // test connectivity to admin API
+    try
+    {
+        var ping = await axios.get(kongaddr + "/status", headers);
+        logInfo('Kong Status: ' +  JSON.stringify(ping.data));
+    }catch(e){
+      logError('Ping to Admin API failed. Please check setting for your admin API or proxy. ' + e);
+      process.exit(2);
+    }
+
     // delete existing users?
-    let delete_existing_users=true;
+    let delete_existing_users = true;
     if (process.env.FEATURE_DELETE_EXISTING_USERS) {
       delete_existing_users = process.env.FEATURE_DELETE_EXISTING_USERS === 'true'
       
@@ -121,10 +182,16 @@ const log_lib = require( process.env.LOG_LIB? process.env.LOG_LIB :"node-color-l
             if (e.response.status == 404) {
               if(command==0 || command==1){
                 logInfo('Workspace ' + workspacedata.name + ' does not exist. Creating .... ')
-                res = await axios.post(kongaddr + workspaceEndpoint, workspacedata, headers);
-                logInfo('Workspace ' + workspacedata.name + ' created.')
-                res= await applyRbac(res, kongaddr, headers, workspacedata.name, workSpaceConfig.rbac);
-                res= await applyPlugins(res, kongaddr,workspacedata.name,workSpaceConfig.plugins,headers );
+                logInfo(kongaddr + workspaceEndpoint);
+                try
+                {
+                  res = await axios.post(kongaddr + workspaceEndpoint, workspacedata, headers);
+                  logInfo('Workspace ' + workspacedata.name + ' created.')
+                  res= await applyRbac(res, kongaddr, headers, workspacedata.name, workSpaceConfig.rbac);
+                  res= await applyPlugins(res, kongaddr,workspacedata.name,workSpaceConfig.plugins,headers );
+                }catch(e){
+                   logError(e);
+                }
               if(command == 0 || command == 2) // users
                 applyUsers(res,kongaddr,workspacedata.name,headers,userNameConfig, true,delete_existing_users )
               }
@@ -142,13 +209,7 @@ const log_lib = require( process.env.LOG_LIB? process.env.LOG_LIB :"node-color-l
             applyGroups(configDir, path, kongaddr, headers, res);
 
           }
-        
-       
 
-      
-
-
-    
   
   
   } catch (e) {
@@ -399,4 +460,23 @@ async function  logInfo  (logtext){
       }
 
     }
+  }
+
+  async function parseProxyNoAuth(proxyString){
+
+    try
+    {
+      //example: http://proxyhost:port
+      let proxyParts = proxyString.split("//");
+      let protocol = proxyParts[0];
+      let hostParts = proxyParts[1].split(":");
+      let host =hostParts[0];
+      let port =hostParts[1];
+      var proxy =  { "protocol" : protocol, "host": host, "port" : port };
+      return proxy
+    }catch(e){
+      logError("possible malformed proxy setting. " + e );
+    }
+
+
   }
