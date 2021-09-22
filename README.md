@@ -1,17 +1,17 @@
-**workspace-config-apply-nodejs**
+# workspace-config-apply-nodejs
 
 A node js module for mangaing RBAC, Users and Global plugins in Workspace
 
-**Status**
+## Status
 Inital Stage - frequent commits, no tests for now will add soon
 
-**Prerequisites**
+## Prerequisites
 This module uses the Admin API for updating Kong workspace config.
 
 A Kong instance up and running with Admin API.
 
 
-**Setup**  
+## Setup
 
 Add a .env file. You can pass enviroment variables either using .env file or passing as export using command prompt.
 
@@ -50,30 +50,36 @@ In ./config folder, you will need to have a folder that corresponds to a new or 
 			- users.yaml ( all user configs).    
 			-workspace.yaml ( all workspace, role and plugin configuration.  If exists, will overwrite root config).   
 
-**Setup**
-From within the root folder you need to first install the node dependencies:
+## Run
 
-`npm install`
+1. Checkout this repository
+2. From within the root folder you need to first install the node dependencies:
 
-Then once these are installed you can use the utility as follows
+```
+npm install
+````
+
+3. Then once these are installed you can use the utility as follows
 
 ```
 node configurator.js [optional: command] [optional: workspacename]
 ````
-*Commands*
- all       - Default (Add all). 
- workspace - Add Workspace + plugin. 
- userrs    - Add Users only.
- groups    - Add Groups only.  
+**Commands**
+
+* all       - Default (Add all). 
+* workspace - Add Workspace + plugin. 
+* userrs    - Add Users only.
+* groups    - Add Groups only.  
 
 If no workspace is provided, then the script will run for all workspaces in the /config folder.
 
-**Examples**
+## Examples
 
+```
 node configurator.js workspace demo1 (create workspace for demo1).    
 node configurator.js workspace       (create workspace configs for all workspaces).   
 node configurator.js users demo1     ( add/remove users for demo1).   
 node configurator.js users           ( add/remove users for all).   
 node configurator.js groups  	     ( add groups).   
-
+```
 
