@@ -1,6 +1,6 @@
 # workspace-config-apply-nodejs
 
-A node js module for mangaing RBAC, Users and Global plugins in Workspace
+A node js module for managing RBAC, Users and Global plugins in Workspace in Kong
 
 ## Status
 Inital Stage - frequent commits, no tests for now will add soon
