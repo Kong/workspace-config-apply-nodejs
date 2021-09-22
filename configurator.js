@@ -24,6 +24,7 @@ const rootWorkSpaceConfig = "root-workspace.yaml";
 const groupConfig = "groups-and-roles.yaml"
 const cookier_header_name = "admin_session"
 const log_lib = require( process.env.LOG_LIB? process.env.LOG_LIB :"node-color-log");
+const commands = ['all','workspace','users','groups'];
 (async () => {
   try {
     var workspacename;
@@ -39,9 +40,17 @@ const log_lib = require( process.env.LOG_LIB? process.env.LOG_LIB :"node-color-l
     */
    // With Node Js first command is node and second is the app file name. Any additional command is index position 2.
 
-   logInfo("Command line argument \n 0 Default (Add all). \n 1 Add Workspace + plugin. \n 2 Add Users only. \n 3 Add Groups only.");
+    logInfo("Command line argument \n all - Default (Add all). \n workspace - Add Workspace + plugin. \n users - Add Users only. \n groups - Add Groups only.");
   
-    let command = process.argv[2]?process.argv[2]:1;
+    //get the command index from the defined commands array	  
+    let command = commands.indexOf(process.argv[2]?process.argv[2]:1);
+
+    //if command does not exist in the array then default to 1	  
+    if (command == -1) {
+      logError("Command not found please select one of the valid options above");
+      process.exit("0");
+    }
+	  
     logInfo('Argument: ' + command );
     if(! ["0","1","2","3"].includes(command.toString())){
       logError("Invalid argument passed.")
