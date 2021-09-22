@@ -50,23 +50,30 @@ In ./config folder, you will need to have a folder that corresponds to a new or 
 			- users.yaml ( all user configs).    
 			-workspace.yaml ( all workspace, role and plugin configuration.  If exists, will overwrite root config).   
 
-**Run**
+**Setup**
+From within the root folder you need to first install the node dependencies:
+
 `npm install`
-``node configurator.js [optional: argument] [optional: workspacename]``
-*Command line argument 
- 0 Default (Add all). 
- 1 Add Workspace + plugin. 
- 2 Add Users only.
- 3 Add Groups only.  
+
+Then once these are installed you can use the utility as follows
+
+```
+node configurator.js [optional: command] [optional: workspacename]
+````
+*Commands*
+ all       - Default (Add all). 
+ workspace - Add Workspace + plugin. 
+ userrs    - Add Users only.
+ groups    - Add Groups only.  
 
 If no workspace is provided, then the script will run for all workspaces in the /config folder.
 
 **Examples**
 
-node configurator.js 1 demo1 (create workspace for demo1).    
-node configurator.js 1       (create workspace configs for all workspaces).   
-node configurator.js 2 demo1 ( add/remove users for demo1).   
-node configurator.js 2       ( add/remove users for all).   
-node configurator.js 3  	 ( add groups).   
+node configurator.js workspace demo1 (create workspace for demo1).    
+node configurator.js workspace       (create workspace configs for all workspaces).   
+node configurator.js users demo1     ( add/remove users for demo1).   
+node configurator.js users           ( add/remove users for all).   
+node configurator.js groups  	     ( add groups).   
 
 
