@@ -19,28 +19,46 @@ For example `` export BASE64_UID_PWD="dsdsdsdsdsds"  ``
 
 There are two ways to authenticate Kong Admin API via this tool.  
 
-*Option 1. Use RBAC Token* 
-    Add ADMIN_TOKEN .  This is the RBAC token which will be used to authorize the admin API calls.  
-	Add AUTH_METHOD=RBAC  
+### Option 1. Use RBAC Token
+* Add ADMIN_TOKEN .  This is the RBAC token which will be used to authorize the admin API calls.  
+   For example
+```
+export ADMIN_TOKEN=<token>
+```
+* Add AUTH_METHOD=RBAC
+```
+export AUTH_METHOD=RBAC
+```
 
-*Option 2. Use client credentials or password*   
-	Add ADMIN_USER . This is the username or service account registered in Kong manager.
-	Add AUTH_METHOD=PASSWORD  	
-    Add BASE64_UID_PWD . This is the base64 encoded username:password for the user/service account. One can use sites like https://www.base64encode.org/ to encode username:password
+### Option 2. Use client credentials or password
 
-Other optional parametres to add in .env  
+* Add ADMIN_USER: This is the username or service account registered in Kong manager.
+```
+export ADMIN_USER=<username>
+```
+* Add AUTH_METHOD=PASSWORD
+```
+export AUTH_METHOD=PASSWORD
+```
+* Add BASE64_UID_PWD: This is the base64 encoded username:password for the user/service account. One can use sites like https://www.base64encode.org/ to encode username:password
+```
+export BASE64_UID_PWD=<base64 password>
+```
 
-CA ( default null)  
-CONFIG_DIR (default ./config/)   
-KONG_ADDR ( default http://localhost:8001)   
-SSL_VERIFY ( default true)  
-LOG_LIB= node-color-log (logging lib)  
-FEATURE_DELETE_EXISTING_USERS=false (if true, will remove admin users from workspace that are not present in users.yaml)  
-PROXY=Any forwward proxy to set for the tool to access the Admin API. Example: http://proxyhost:port. Default NOT SET.
+### Other optional parametres to add in .env  
+
+* CA ( default null)  
+* CONFIG_DIR (default ./config/)   
+* KONG_ADDR ( default http://localhost:8001)   
+* SSL_VERIFY ( default true)  
+* LOG_LIB= node-color-log (logging lib)  
+* FEATURE_DELETE_EXISTING_USERS=false (if true, will remove admin users from workspace that are not present in users.yaml)  
+* PROXY=Any forwward proxy to set for the tool to access the Admin API. Example: http://proxyhost:port. Default NOT SET.
 
 
 In ./config folder, you will need to have a folder that corresponds to a new or existing workspace you would like to configure. Each workspace folder structure will be like this below.  
 
+```
 ./config.  
 	root-workspace ( default workspace config. ).   
 	**- workspace1 ( directory. This will be the workspace name).**     
@@ -49,6 +67,7 @@ In ./config folder, you will need to have a folder that corresponds to a new or 
 	**- workspace2 ( directory. This will be the workspace name).**
 			- users.yaml ( all user configs).    
 			-workspace.yaml ( all workspace, role and plugin configuration.  If exists, will overwrite root config).   
+```
 
 ## Run
 
