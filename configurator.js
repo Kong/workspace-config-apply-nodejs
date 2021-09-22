@@ -200,7 +200,7 @@ const log_lib = require( process.env.LOG_LIB? process.env.LOG_LIB :"node-color-l
             }
           }
         }
-        else{ logWarn('Skipping wrokspace ' + dirs[dir])}
+        else{ logWarn('Skipping workspace ' + dirs[dir])}
       }
 
       // Add groups. These are cross workspaces and roles.
