@@ -17,30 +17,30 @@ Add a .env file. You can pass enviroment variables either using .env file or pas
 
 For example `` export BASE64_UID_PWD="dsdsdsdsdsds"  ``
 
-There are two ways to authenticate Kong Admin API via this tool.  
+There are two ways to authenticate Kong Admin API via this tool:
 
-### Option 1. Use RBAC Token
-* Add ADMIN_TOKEN .  This is the RBAC token which will be used to authorize the admin API calls.  
+### Use RBAC Token
+1. Add the admin token: This is the RBAC token which will be used to authorize the admin API calls.
    For example
 ```
 export ADMIN_TOKEN=<token>
 ```
-* Add AUTH_METHOD=RBAC
+2. Add Authentication method as RBAC
 ```
 export AUTH_METHOD=RBAC
 ```
 
-### Option 2. Use client credentials or password
+### Use client credentials or password
 
-* Add ADMIN_USER: This is the username or service account registered in Kong manager.
+* Add admin username: This is the username or service account registered in Kong manager.
 ```
 export ADMIN_USER=<username>
 ```
-* Add AUTH_METHOD=PASSWORD
+* Add Authentication method as PASSWORD
 ```
 export AUTH_METHOD=PASSWORD
 ```
-* Add BASE64_UID_PWD: This is the base64 encoded username:password for the user/service account. One can use sites like https://www.base64encode.org/ to encode username:password
+* Add base64 encoded username and password: This is the base64 encoded username:password for the user/service account. One can use sites like https://www.base64encode.org/ to encode username:password
 ```
 export BASE64_UID_PWD=<base64 password>
 ```
@@ -72,13 +72,14 @@ In ./config folder, you will need to have a folder that corresponds to a new or 
 ## Run
 
 1. Checkout this repository
-2. From within the root folder you need to first install the node dependencies:
+2. Set env vars
+3. From within the root folder you need to first install the node dependencies:
 
 ```
 npm install
 ````
 
-3. Then once these are installed you can use the utility as follows
+4. Then once these are installed you can use the utility as follows
 
 ```
 node configurator.js [optional: command] [optional: workspacename]
