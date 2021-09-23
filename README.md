@@ -59,14 +59,18 @@ export BASE64_UID_PWD=<base64 password>
 In ./config folder, you will need to have a folder that corresponds to a new or existing workspace you would like to configure. Each workspace folder structure will be like this below.  
 
 ```
-./config.  
-	root-workspace ( default workspace config. ).   
-	**- workspace1 ( directory. This will be the workspace name).**     
-			- users.yaml ( all user configs).   
-			-workspace.yaml ( all workspace, role and plugin configuration. If exists, will overwrite root config).  
-	**- workspace2 ( directory. This will be the workspace name).**
-			- users.yaml ( all user configs).    
-			-workspace.yaml ( all workspace, role and plugin configuration.  If exists, will overwrite root config).   
+       config
+       ├── workspace1 ( directory. This will be the workspace name )
+       │   ├── users.yaml  ( all user configs )
+       │   └── workspace.yaml ( OPTIONAL: all workspace, role and plugin configuration. If exists, will overwrite root config )
+       ├── workspace2
+       │   ├── users.yaml
+       │   └── workspace.yaml
+       ├── workspace3
+       │   ├── users.yaml
+       │   └── workspace.yaml
+       ├── groups-and-roles.yaml ( groups and roles for all workspaces - cant be overwritten in workspace directory )
+       └── root-workspace.yaml ( default workspace config )
 ```
 
 ## Run
