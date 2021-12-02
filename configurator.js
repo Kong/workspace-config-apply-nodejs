@@ -35,12 +35,12 @@ const commands = ['all','workspace','users','groups'];
     Command line argument
     0 Default (Add all).
     1 Add Workspace + plugin.
-    2 Add Users only.
+    2 Add Users only. ( For non OIDC Kong Instances only)
     3 Add groups. ( Should run after adding the workspaces first)
     */
    // With Node Js first command is node and second is the app file name. Any additional command is index position 2.
 
-    logInfo("Command line argument \n all - Default (Add all). \n workspace - Add Workspace + plugin. \n users - Add Users only. \n groups - Add Groups only.");
+    logInfo("Command line argument \n all - Default (Add all). \n workspace - Add Workspace + plugin. \n users - Add Users only ( For non OIDC Kong Instances only). \n groups - Add Groups only.");
   
     //get the command index from the defined commands array	  
     let command = commands.indexOf(process.argv[2]?process.argv[2]:1);
@@ -183,7 +183,7 @@ const commands = ['all','workspace','users','groups'];
                 res= await applyPlugins(res, kongaddr,workspacedata.name,workSpaceConfig.plugins,headers, false );
               }
               if(command == 0 || command == 2) // users
-                applyUsers(res,kongaddr,workspacedata.name,headers,userNameConfig,false, delete_existing_users )
+               res = await applyUsers(res,kongaddr,workspacedata.name,headers,userNameConfig,false, delete_existing_users )
                 
             }
     
@@ -219,7 +219,19 @@ const commands = ['all','workspace','users','groups'];
 
           }
 
-  
+  // log out
+  if (process.env.AUTH_METHOD == 'PASSWORD'){
+    // get auth cookie
+    logInfo("Calling auth endpoint to logout...");
+    try{
+      var logOut = await axios.delete(kongaddr + authEndpoint + "?session_logout=true", headers);
+      logInfo( " Logout complete. System exiting..") ;
+     
+    }catch(e){
+      logError("Logout failed. It's likely that user wasn't fully logged in at this point" + e);
+      process.exit(1);
+    }
+}
   
   } catch (e) {
     logError(e.stack);
@@ -291,6 +303,8 @@ async function applyPlugins(res, kongaddr, workspacename, plugins, headers, isNe
 
 
 async function applyUsers(res, kongaddr, workspacename,  headers, users, isnew, delete_existing_users) {
+  logWarn('DO NOT USE THIS IF YOUR KONG INSTANCE IS OIDC ENABLED. WAITING 7 seconds for admin user to stope the execution...');
+  await new Promise(resolve => setTimeout(resolve, 7000));
   logInfo('starting to add users in the workspace ' + workspacename)
   for (var user of users) {
     var userdata = {"username": user.name, "email" : user.email};
