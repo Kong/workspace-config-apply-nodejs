@@ -15,3 +15,12 @@
 🆕 New features: Complete redesign
 
 🔧 Fixes: none.
+
+## 1.2.0
+
+
+
+🆕 New features: 
+    Multi workspace custom role creation against default workspace.
+    Admin users added with RBAC token disabled.
+
