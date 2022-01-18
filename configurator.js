@@ -127,6 +127,7 @@ const commands = ['all','workspace','users','groups'];
         logInfo("Calling auth endpoint..");
         try{
           var auth = await axios.get(kongaddr + authEndpoint, headers);
+          //ICAgLy8gLy8gZGVidWcgbW9kZQogICAgICAgICAgLy8gZm9yKGggaW4gYXV0aC5oZWFkZXJzWydzZXQtY29va2llJ10pewogICAgICAgICAgLy8gICBsb2dXYXJuKCJwcmludGluZyBjb29raWUgZm9yIGRlYnVnIG9ubHk6ICIgKyBhdXRoLmhlYWRlcnNbJ3NldC1jb29raWUnXVtoXSk7CiAgICAgICAgICAvLyB9
           headers.headers.Cookie=auth.headers['set-cookie'];
           //dont need the auth header anymore now that we have the cookie
           delete headers.headers["Authorization"];
@@ -150,6 +151,12 @@ const commands = ['all','workspace','users','groups'];
     let delete_existing_users = true;
     if (process.env.FEATURE_DELETE_EXISTING_USERS) {
       delete_existing_users = process.env.FEATURE_DELETE_EXISTING_USERS === 'true'
+      
+    }
+    // delete existing roles?
+    let delete_existing_roles = true;
+    if (process.env.FEATURE_DELETE_EXISTING_ROLES) {
+      delete_existing_roles= process.env.FEATURE_DELETE_EXISTING_ROLES === 'true'
       
     }
     // get all top level dirs of config. Each subfolder will denote configs of one workspace
@@ -179,7 +186,7 @@ const commands = ['all','workspace','users','groups'];
                 logWarn('Workspace ' + workspacedata.name + ' exists. Reapplying config ')
                 res = await axios.patch(kongaddr + workspaceEndpoint + '/' + workspacedata.name, workspacedata, headers);
                 logInfo('Workspace ' + workspacedata.name + ' config reapplied.');
-                res= await applyRbac(res, kongaddr, headers, workspacedata.name, workSpaceConfig.rbac,false);
+                res= await applyRbac(res, kongaddr, headers, workspacedata.name, workSpaceConfig.rbac,delete_existing_roles, false);
                 res= await applyPlugins(res, kongaddr,workspacedata.name,workSpaceConfig.plugins,headers, false );
               }
               if(command == 0 || command == 2) // users
@@ -196,13 +203,13 @@ const commands = ['all','workspace','users','groups'];
                 {
                   res = await axios.post(kongaddr + workspaceEndpoint, workspacedata, headers);
                   logInfo('Workspace ' + workspacedata.name + ' created.')
-                  res= await applyRbac(res, kongaddr, headers, workspacedata.name, workSpaceConfig.rbac);
+                  res= await applyRbac(res, kongaddr, headers, workspacedata.name, workSpaceConfig.rbac, delete_existing_roles);
                   res= await applyPlugins(res, kongaddr,workspacedata.name,workSpaceConfig.plugins,headers );
                 }catch(e){
                    logError(e);
                 }
               if(command == 0 || command == 2) // users
-                applyUsers(res,kongaddr,workspacedata.name,headers,userNameConfig, true,delete_existing_users )
+                res = await applyUsers(res,kongaddr,workspacedata.name,headers,userNameConfig, true,delete_existing_users )
               }
             } else {
               logError(e.stack);
@@ -222,8 +229,9 @@ const commands = ['all','workspace','users','groups'];
   // log out
   if (process.env.AUTH_METHOD == 'PASSWORD'){
     // get auth cookie
-    logInfo("Calling auth endpoint to logout...");
+    logInfo("Calling auth endpoint to logout in 5 seconds...");
     try{
+      await new Promise(resolve => setTimeout(resolve, 5000));
       var logOut = await axios.delete(kongaddr + authEndpoint + "?session_logout=true", headers);
       logInfo( " Logout complete. System exiting..") ;
      
@@ -239,19 +247,28 @@ const commands = ['all','workspace','users','groups'];
    
 })();
 
-async function applyRbac(res, kongaddr, headers, workspacename, rbac, isNew=true) {
+async function applyRbac(res, kongaddr, headers, workspacename, rbac,  delete_existing_roles, isNew=true,) {
 
   
-
-  if(!isNew) // existing workspace.
+  logInfo("Applying roles now for workspace " + workspacename);
+  
+  if(!isNew && delete_existing_roles) // existing workspace but not default.. delete the current role. 
   {
+    
+    
+    logWarn("Deleting current roles. If you do not want this set FEATURE_DELETE_EXISTING_ROLES to false and run again. Execution will pause for few seconds to allow stop. Kong strongly recommends not to delete existing roles in 'default' workspace using this tool");
+    await new Promise(resolve => setTimeout(resolve, 8000));
+    if (workspacename == "default"){
+      logError("Kong strongly recommends not to delete existing roles in 'default' using this tool");
+      process.exit(2);
+    }
     var currentRoles = await axios.get(kongaddr + '/' + workspacename + rbacEndpoint + rolesEndpoint, headers);
     for (var oldRole of currentRoles.data.data) {
       res = await axios.delete(kongaddr + '/' + workspacename + rbacEndpoint + rolesEndpoint + '/' + oldRole.name, headers);
     }
   }
 
-  
+    try{
     for (var roleDetail of rbac) {
       var roledata = {
         'name': roleDetail.role
@@ -263,7 +280,15 @@ async function applyRbac(res, kongaddr, headers, workspacename, rbac, isNew=true
       }
     }
     logInfo('all roles and permissions successfully applied for the workspace ' + workspacename );
+    }catch(e){
+      if (e.response.status == 409) {
+        logError("role or permission exists. Applying roles failed.  if FEATURE_DELETE_EXISTING_ROLES set to false then only keep new roles in the config. If needed, delete existing roles from UI or using admin API. " + e.response.data.message);
 
+      }else{
+          logError(e.stack);
+        }
+
+    }
 }
 
 
@@ -303,11 +328,11 @@ async function applyPlugins(res, kongaddr, workspacename, plugins, headers, isNe
 
 
 async function applyUsers(res, kongaddr, workspacename,  headers, users, isnew, delete_existing_users) {
-  logWarn('DO NOT USE THIS IF YOUR KONG INSTANCE IS OIDC ENABLED. WAITING 7 seconds for admin user to stope the execution...');
-  await new Promise(resolve => setTimeout(resolve, 7000));
+  //logWarn('DO NOT USE THIS IF YOUR KONG INSTANCE IS OIDC ENABLED. WAITING 7 seconds for admin user to stope the execution...');
+  //wait new Promise(resolve => setTimeout(resolve, 7000));
   logInfo('starting to add users in the workspace ' + workspacename)
   for (var user of users) {
-    var userdata = {"username": user.name, "email" : user.email};
+    var userdata = {"username": user.name, "email" : user.email, "rbac_token_enabled": false};
    
     try {
       res = await axios.get(kongaddr + '/' + workspacename + adminEndpoint + '/' + user.name, headers);
@@ -357,6 +382,10 @@ async function applyUsers(res, kongaddr, workspacename,  headers, users, isnew, 
       //all admins in the workspace
       try
       {
+        if (workspacename == "default"){
+          logError("Kong strongly recommends not to delete existing users in 'default' using this tool. Please use admin API or manager UI to delete users if needed in default workspace");
+          process.exit(2);
+        }
         logWarn('FEATURE_DELETE_EXISTING_USERS is set to true, so checking for users that are in manager but not in users list. Set this to false if you do not want it to happen.');
         var currentAdminUsers = await axios.get(kongaddr + '/' + workspacename + adminEndpoint , headers)
         var currentAdmins= currentAdminUsers.data.data.map(m => m.username);

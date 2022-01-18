@@ -53,6 +53,7 @@ export BASE64_UID_PWD=<base64 password>
 * SSL_VERIFY ( default true)  
 * LOG_LIB= node-color-log (logging lib)  
 * FEATURE_DELETE_EXISTING_USERS=false (if true, will remove admin users from workspace that are not present in users.yaml)  
+* FEATURE_DELETE_EXISTING_ROLES=false ( if true, will remove existing roles from workspace that are not present in workspace.yaml. setting it true will not be allowed for running aginst default workspace that will cause Kong to work incorrectly. )
 * PROXY=Any forwward proxy to set for the tool to access the Admin API. Example: http://proxyhost:port. Default NOT SET.
 
 
@@ -102,4 +103,12 @@ node configurator.js users demo1     ( add/remove users for demo1).
 node configurator.js users           ( add/remove users for all).   
 node configurator.js groups  	     ( add groups).   
 ```
+To use it to add custom roles in default workspace.
 
+1. Use the workspace.yaml under rename-this-to-default folder to add custom roles that will apply the role for all workspaces. Use this with care.
+2. Ensure only custom roles you want to add are in the default->workspace.yaml file.
+3. If you want to redefine a custom role, then remove it using manager UI, or admin API and rerun. 
+4. MUST:Set FEATURE_DELETE_EXISTING_ROLES and FEATURE_DELETE_EXISTING_USERS to false when you run this against 'default' workspace. This is to avoid deleting default users and roles by accident in default. Kong recommendation is to minimize the use of this application on default workspace.
+5. To add users to the custom roles. Use rename-this-to-default -> users.yaml as sample.  
+6. Rename rename-this-to-default to default.
+7. Run node configurator.js default all.

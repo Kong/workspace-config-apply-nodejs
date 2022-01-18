@@ -1,0 +1,5 @@
+---
+- name: custom-read
+  email: customread1@gmail12.com
+  roles:
+  - custom-read-only

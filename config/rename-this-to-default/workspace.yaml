@@ -1,0 +1,10 @@
+    config:
+      portal: false
+    rbac:
+    - role: custom-read-only
+      permissions:
+      - endpoint: "*"
+        negative: false
+        actions: "read"
+        workspace: "*"
+  
