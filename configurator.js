@@ -16,6 +16,8 @@ const adminEndpoint = '/admins';
 const pluginsEndpoint = '/plugins';
 const groupEndpoint = "/groups";
 const authEndpoint = "/auth"
+const fileEndpoint = "/files"
+const metaEndpoint ="/meta"
 
 const workSpaceConfigName = "workspace.yaml";
 const pluginConfigName = "plugins.yaml";
@@ -24,7 +26,7 @@ const rootWorkSpaceConfig = "root-workspace.yaml";
 const groupConfig = "groups-and-roles.yaml"
 const cookier_header_name = "admin_session"
 const log_lib = require( process.env.LOG_LIB? process.env.LOG_LIB :"node-color-log");
-const commands = ['all','workspace','users','groups'];
+const commands = ['all','workspace','users','groups','wipe'];
 (async () => {
   try {
     var workspacename;
@@ -37,6 +39,7 @@ const commands = ['all','workspace','users','groups'];
     1 Add Workspace + plugin.
     2 Add Users only. ( For non OIDC Kong Instances only)
     3 Add groups. ( Should run after adding the workspaces first)
+    4 Wipe workspace, optional force delete.
     */
    // With Node Js first command is node and second is the app file name. Any additional command is index position 2.
 
@@ -52,7 +55,7 @@ const commands = ['all','workspace','users','groups'];
     }
 	  
     logInfo('Argument: ' + command );
-    if(! ["0","1","2","3"].includes(command.toString())){
+    if(! ["0","1","2","3", "4"].includes(command.toString())){
       logError("Invalid argument passed.")
       process.exit("0");
     }
@@ -67,6 +70,8 @@ const commands = ['all','workspace','users','groups'];
       configDir = process.env.CONFIG_DIR;
     }
 
+    
+    
     //check auth method . Session cookie(COOKIE) or rbac token ( RBAC)
     if (!process.env.AUTH_METHOD){
       logError("Env variable AUTH_METHOD must be set");
@@ -159,6 +164,21 @@ const commands = ['all','workspace','users','groups'];
       delete_existing_roles= process.env.FEATURE_DELETE_EXISTING_ROLES === 'true'
       
     }
+
+    // FEATURE_FORCE_WIPE_WORKSPACE true will wipe an worksapce even if there are entities present. USE WITH CAUTION.
+    let featureForceWipeWorkspace = false;
+    if (process.env.FEATURE_FORCE_WIPE_WORKSPACE) {
+      featureForceWipeWorkspace= process.env.FEATURE_FORCE_WIPE_WORKSPACE === 'true'
+     }
+
+    // none of the below is needed if it's workspace wipe
+    if(command==4){
+      await wipeWorkspace(featureForceWipeWorkspace, kongaddr, headers);
+      process.exit(0);
+    }
+
+
+
     // get all top level dirs of config. Each subfolder will denote configs of one workspace
     
     const getDirectories = source =>fs.readdirSync(source, { withFileTypes: true }).filter(dirent => dirent.isDirectory()).map(dirent => dirent.name)
@@ -529,6 +549,74 @@ async function  logInfo  (logtext){
     }catch(e){
       logError("possible malformed proxy setting. " + e );
     }
+
+
+  }
+
+  async function wipeWorkspace(featureForceWipeWorkspace, kongaddr, headers){
+
+    let wipeWorkspaceName = process.argv[3]?process.argv[3]:"default";
+    if(wipeWorkspaceName=="default"){
+      logError("please pass a non default workspace name");
+      process.exit(0);
+    }
+    let useForce = process.argv[4]?process.argv[4]=='true'?true:false:false;
+    if(!useForce){
+      logWarn("This will delete the workspace, if it's empty, barring dev portal files. This program will halt for some time to allow manual termination");
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }else{
+      if (!featureForceWipeWorkspace){
+        logError("FEATURE_FORCE_WIPE_WORKSPACE must be set to true for this to be allowed");
+        process.exit(0);
+      }else{
+        logWarn("This will delete the workspace, even if it's not empty. Proceeding with extreme caution. This program will halt for some time to allow manual termination");
+        await new Promise(resolve => setTimeout(resolve, 8000));
+      }
+    }
+    // checking what's in the workspace
+    try{
+      var meta = await axios.get(kongaddr + workspaceEndpoint  + "/" + wipeWorkspaceName + metaEndpoint , headers);
+      let cancelWipe = false;
+
+      logWarn('current values : ---' + JSON.stringify(meta.data.counts));
+      for (const [key, value] of Object.entries(meta.data.counts)) {
+        if((key != 'files') && (value != 0)  && (!useForce)){
+          logError('entity ' + key + ' are not empty');
+          cancelWipe = true;
+        }
+      }
+      if(cancelWipe){
+        logError( " Workspace " + wipeWorkspaceName + " can't be deleted as it's not empty");
+        process.exit(0);
+      }
+
+      for (const [key, value] of Object.entries(meta.data.counts)) {
+        // start deleting entities now
+        if(value != 0){
+          let nextUrl = kongaddr   + "/" + wipeWorkspaceName + "/" + key.replace("_", "/");
+          while (nextUrl){
+            var entities = await axios.get(nextUrl , headers);
+            
+            for(var e in entities.data.data){
+              await axios.delete(kongaddr   + "/" + wipeWorkspaceName + "/" + key.replace("_", "/") + "/" + entities.data.data[e].id , headers);
+            }
+            nextUrl=entities.data.next?kongaddr   + entities.data.next:null;
+        }
+          logWarn("All " + key + " deleted");
+        }
+      }
+
+        logWarn("Workspace is empty now. Ready for deletion");
+        await axios.delete(kongaddr + workspaceEndpoint  + "/" + wipeWorkspaceName , headers);
+        logWarn("Workspace " + wipeWorkspaceName + " wiped" );
+        
+      
+
+
+    }catch(e){
+      logError("error wiping workspace. " + e );
+    }
+
 
 
   }
