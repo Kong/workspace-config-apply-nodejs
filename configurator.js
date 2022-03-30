@@ -43,7 +43,7 @@ const commands = ['all','workspace','users','groups','wipe'];
     */
    // With Node Js first command is node and second is the app file name. Any additional command is index position 2.
 
-    logInfo("Command line argument \n all - Default (Add all). \n workspace - Add Workspace + plugin. \n users - Add Users only ( For non OIDC Kong Instances only). \n groups - Add Groups only.");
+    logInfo("Command line argument \n all - Default (Add all). \n workspace - Add Workspace + plugin. \n users - Add Users only ( For non OIDC Kong Instances only). \n groups - Add Groups only. \n Wipe workspace, optional force delete.");
   
     //get the command index from the defined commands array	  
     let command = commands.indexOf(process.argv[2]?process.argv[2]:1);
@@ -294,7 +294,20 @@ async function applyRbac(res, kongaddr, headers, workspacename, rbac,  delete_ex
         'name': roleDetail.role
       };
       res = await axios.post(kongaddr + '/' + workspacename + rbacEndpoint + rolesEndpoint, roledata, headers);
-      for (var permission of roleDetail.permissions) {
+
+      //following change is for WPB request to have a file instead of array.
+      var permissionList;
+      if (Array.isArray(roleDetail.permissions)){
+        // permissions are embeeded as array.
+        permissionList = roleDetail.permissions;
+      }else{
+        // permissions externalized. The file path will need to be relative.
+        var permFilePath = path.resolve(roleDetail.permissions);
+        logInfo("Permission file for role " + roleDetail.role + "is in file " + permFilePath);
+        permissionList = yaml.load(fs.readFileSync( permFilePath), 'utf8').permissions;
+      }
+
+      for (var permission of permissionList) {
         res = await axios.post(kongaddr + '/' + workspacename + rbacEndpoint + rolesEndpoint + '/' + roleDetail.role + permissionsEndpoint, permission, headers);
         logInfo( "Permission " + JSON.stringify(permission) + ' added for role ' + roleDetail.role + ' in workspace '  + workspacename);
       }

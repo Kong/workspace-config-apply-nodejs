@@ -2,30 +2,12 @@
       portal: false
     rbac:
     - role: readonlyrole
-      permissions:
+      permissions: 
       - endpoint: "*"
         negative: false
         actions: "read"
     - role: admin
-      permissions:
-      - endpoint: "*"
-        negative: false
-        actions: "create,update,read,delete"
-      - endpoint: "/rbac/*"
-        negative: true 
-        actions: "create,update,read,delete"
-      - endpoint: "/rbac/*/*"
-        negative: true 
-        actions: "create,update,read,delete"
-      - endpoint: "/rbac/*/*/*"
-        negative: true 
-        actions: "create,update,read,delete"
-      - endpoint: "/rbac/*/*/*/*"
-        negative: true 
-        actions: "create,update,read,delete"
-      - endpoint: "/rbac/*/*/*/*/*"
-        negative: true 
-        actions: "create,update,read,delete"
+      permissions: ./config/admin-role-list.yaml
     - role: superadmin2
       permissions:
       - endpoint: "*"
