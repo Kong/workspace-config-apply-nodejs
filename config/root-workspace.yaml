@@ -7,7 +7,7 @@
         negative: false
         actions: "read"
     - role: admin
-      permissions: ./config/admin-role-list.yaml
+      permissions: ./config/sample-admin-role-list.yaml
     - role: superadmin2
       permissions:
       - endpoint: "*"
