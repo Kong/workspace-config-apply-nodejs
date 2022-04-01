@@ -24,3 +24,10 @@
     Multi workspace custom role creation against default workspace.
     Admin users added with RBAC token disabled.
 
+## 2.0.0
+
+
+
+🆕 New features: 
+    Added new option to wipe workspace. Customer will not need to use Portal CLI which does not support Session cookie based authentication
+
