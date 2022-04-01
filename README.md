@@ -69,6 +69,17 @@ In ./config folder, you will need to have a folder that corresponds to a new or 
 			- users.yaml ( all user configs).    
 			-workspace.yaml ( all workspace, role and plugin configuration.  If exists, will overwrite root config).   
 ```
+It is possible to externalize permissions of a role to a separate file. Like in the example below, one role has embedded permissions, and other has permissions externalized in a file.
+```
+    rbac:
+    - role: readonlyrole
+      permissions: 
+      - endpoint: "*"
+        negative: false
+        actions: "read"
+    - role: admin
+      permissions: ./config/sample-admin-role-list.yaml
+```
 
 ## Run
 
