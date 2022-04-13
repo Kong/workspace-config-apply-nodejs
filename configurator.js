@@ -242,7 +242,7 @@ const commands = ['all','workspace','users','groups','wipe'];
       // Add groups. These are cross workspaces and roles.
       if( command == 3){
             
-            applyGroups(configDir, path, kongaddr, headers, res);
+        res= await applyGroups(configDir, path, kongaddr, headers, res);
 
           }
 
@@ -383,11 +383,11 @@ async function applyUsers(res, kongaddr, workspacename,  headers, users, isnew, 
         }catch(e){
           if(e.response.status == 409){
             logWarn(' User ' + user.name + ' exists in another workspace' )
-          }else{ logError(e);}
+          }else{ logError(e.stack + " Unable to add users. Please check config.");}
         }
         logInfo(' User ' + user.name + ' added in ' + workspacename);
       } else {
-        logError(e.stack);
+        logError(e.stack + " Unable to add users. Please check config.");
       }
     }
     
@@ -465,20 +465,33 @@ async function applyGroups(configDir, path, kongaddr, headers, res){
         // now add new roles
         
 
-          // get all workspaces
-          var workspaces = await axios.get(kongaddr + workspaceEndpoint , headers);
+          
           // get group id. By this time, the group shall exist.
           if(!groupId)   
             groupId = (await axios.get(kongaddr + groupEndpoint + "/" + groupInfo.group_name, headers)).data.id;
           for(var role of groupInfo.roles){
             try{
               // get workspace that matches with the name in yaml groups.roles.workspace.
-                var wk = workspaces.data.data.filter( f => f.name == role.workspace)[0];
+                var wkId = null;
+                try{
+                  var wk = await axios.get(kongaddr + workspaceEndpoint  + "/" + role.workspace, headers);
+                  wkId = wk.data.id;
+                }catch{
+                  if(e.response.status == 404)
+                  {
+                    logError("workspsce " + role.workspace + " in group " + groupInfo.group_name + " not found." );
+                  }
+                  logError(e.stack);
+                  process.exit(1);
+                }
+
+
+                // var wk = workspaces.data.data.filter( f => f.name == role.workspace)[0];
                 // get role that matches with the name in yaml groups.roles.role.
                 var wkRoles = await axios.get(kongaddr  + "/" + role.workspace + rbacEndpoint + rolesEndpoint , headers);
                 var roleId = wkRoles.data.data.filter( r => r.name == role.role)[0].id;
                 // create role data
-                var roleData = { "workspace_id": wk.id , "rbac_role_id" : roleId}
+                var roleData = { "workspace_id": wkId , "rbac_role_id" : roleId}
                 res = await axios.post( kongaddr + groupEndpoint + "/" + groupId + rolesEndpoint, roleData , headers);
                 logInfo (' Role created in group ' + groupInfo.group_name + " mapping workspace " + role.workspace + " and role " + role.role  );
               }catch(e){
@@ -612,6 +625,7 @@ async function  logInfo  (logtext){
             
             for(var e in entities.data.data){
               await axios.delete(kongaddr   + "/" + wipeWorkspaceName + "/" + key.replace("_", "/") + "/" + entities.data.data[e].id , headers);
+              logWarn(key + " with id " +  entities.data.data[e].id + " deleted")
             }
             nextUrl=entities.data.next?kongaddr   + entities.data.next:null;
         }
