@@ -678,30 +678,17 @@ async function  logInfo  (logtext){
           while(nextUrl){
             var routes = (await axios.get(nextUrl, headers)).data;
             routes.data.forEach(async(r,index,array)=>{
-            // for(var r of routes.data){
-              
-              // compares only the first set of route attributes. Using Inso generate config there is limited option to declare more.
-              var pathR = r.paths?r.paths[0]:'';
-              var host = r.hosts?r.hosts[0]:'';
-              var method = r.methods?r.methods[0]:'';
-              var header = r.headers?r.headers[0]:'';
-              
+           
 
               conf.services[0].routes.forEach( async(cr) => {
 
-                    var specpath = cr.paths?cr.paths[0]:'';
-                    var spechost = cr.hosts?cr.hosts[0]:'';
-                    var specmethod = cr.methods?cr.methods[0]:'';
-                    var specheader = cr.headers?cr.headers[0]:'';
-                    if(pathR == specpath && 
-                      host == spechost && 
-                      method == specmethod && 
-                      header == specheader){
-
-                    // if(r.paths.map(cr.paths) && 
-                    //  r.hosts.map(cr.hosts) && 
-                    //  r.methods.map(cr.methods) && 
-                    //  r.headers.includes(cr.headers)){
+            
+                    if((isMatch(r.paths, cr.paths)) &&
+                      (isMatch(r.hosts, cr.hosts)) &&
+                      (isMatch(r.methods, cr.methods )) &&
+                      (isMatch(r.headers, cr.headers))) {
+                
+                    
                       logError( "Route conflict: \n Config route: " + JSON.stringify(cr) + "\n conflcited with  \n" + JSON.stringify(r) + "\n in workspace " + wk.name) ;
                       process.stdout.write("0");
                       process.exit(1);
@@ -740,7 +727,17 @@ async function  logInfo  (logtext){
 }
 
 
-     
+ function isMatch(superset,subset){
+
+  // both sets are either empty or null. so match
+  if((!Array.isArray(superset) || superset.length==0) && (!Array.isArray(subset) || subset.length==0)) 
+    return true;
+  else
+  // true if at least one element match (safer option), false if none matches
+    return superset.some( p => subset.includes(p))
+}
+
+
 
    
    
