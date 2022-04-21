@@ -18,6 +18,7 @@ const groupEndpoint = "/groups";
 const authEndpoint = "/auth"
 const fileEndpoint = "/files"
 const metaEndpoint ="/meta"
+const routeEndpoint ="/routes"
 
 const workSpaceConfigName = "workspace.yaml";
 const pluginConfigName = "plugins.yaml";
@@ -26,7 +27,7 @@ const rootWorkSpaceConfig = "root-workspace.yaml";
 const groupConfig = "groups-and-roles.yaml"
 const cookier_header_name = "admin_session"
 const log_lib = require( process.env.LOG_LIB? process.env.LOG_LIB :"node-color-log");
-const commands = ['all','workspace','users','groups','wipe'];
+const commands = ['all','workspace','users','groups','wipe','validate-route'];
 (async () => {
   try {
     var workspacename;
@@ -40,10 +41,11 @@ const commands = ['all','workspace','users','groups','wipe'];
     2 Add Users only. ( For non OIDC Kong Instances only)
     3 Add groups. ( Should run after adding the workspaces first)
     4 Wipe workspace, optional force delete.
+    5.Check Route Conflict against the kong conf
     */
    // With Node Js first command is node and second is the app file name. Any additional command is index position 2.
 
-    logInfo("Command line argument \n all - Default (Add all). \n workspace - Add Workspace + plugin. \n users - Add Users only ( For non OIDC Kong Instances only). \n groups - Add Groups only.");
+    logInfo("Command line argument \n all - Default (Add all). \n workspace - Add Workspace + plugin. \n users - Add Users only ( For non OIDC Kong Instances only). \n groups - Add Groups only.  \n wipe workspace, optional force delete. \n validate-route - against the kong conf");
   
     //get the command index from the defined commands array	  
     let command = commands.indexOf(process.argv[2]?process.argv[2]:1);
@@ -55,7 +57,7 @@ const commands = ['all','workspace','users','groups','wipe'];
     }
 	  
     logInfo('Argument: ' + command );
-    if(! ["0","1","2","3", "4"].includes(command.toString())){
+    if(! ["0","1","2","3", "4", "5"].includes(command.toString())){
       logError("Invalid argument passed.")
       process.exit("0");
     }
@@ -142,6 +144,17 @@ const commands = ['all','workspace','users','groups','wipe'];
         }
     }
     
+    if(command==5){
+      var allRoutesChecked = false;
+      checkRouteConflictOnline( kongaddr, headers, allRoutesChecked);
+
+      // await long time as process will exit as part of checkRouteConflictOnline when either a conflict is found or all routes checked.
+      // the lines below is only circuit breaker, should not be hit.
+      await new Promise(resolve => setTimeout(resolve, 50000));
+      logWarn("process exiting, not all routes checked.");
+      process.exit(0);
+    }
+
     // test connectivity to admin API
     try
     {
@@ -177,7 +190,7 @@ const commands = ['all','workspace','users','groups','wipe'];
       process.exit(0);
     }
 
-
+   
 
     // get all top level dirs of config. Each subfolder will denote configs of one workspace
     
@@ -605,11 +618,14 @@ async function  logInfo  (logtext){
 
       for (const [key, value] of Object.entries(meta.data.counts)) {
         // start deleting entities now
+      
         if(value != 0){
           let nextUrl = kongaddr   + "/" + wipeWorkspaceName + "/" + key.replace("_", "/");
+          
           while (nextUrl){
+            logInfo("NEXT-URL: " + nextUrl);
             var entities = await axios.get(nextUrl , headers);
-            
+            logInfo(key + " COUNT " + entities.data.data.length);
             for(var e in entities.data.data){
               await axios.delete(kongaddr   + "/" + wipeWorkspaceName + "/" + key.replace("_", "/") + "/" + entities.data.data[e].id , headers);
               logWarn(key + " with id " +  entities.data.data[e].id + " deleted")
@@ -619,8 +635,9 @@ async function  logInfo  (logtext){
           logWarn("All " + key + " deleted");
         }
       }
-
-        logWarn("Workspace is empty now. Ready for deletion");
+      var metaEnd = await axios.get(kongaddr + workspaceEndpoint  + "/" + wipeWorkspaceName + metaEndpoint , headers);
+      logWarn('just before delete values : ---' + JSON.stringify(metaEnd.data.counts));
+      logWarn("Workspace is empty now. Ready for deletion");
         await axios.delete(kongaddr + workspaceEndpoint  + "/" + wipeWorkspaceName , headers);
         logWarn("Workspace " + wipeWorkspaceName + " wiped" );
         
@@ -628,9 +645,105 @@ async function  logInfo  (logtext){
 
 
     }catch(e){
-      logError("error wiping workspace. " + e );
+      logError("error wiping workspace. " + e.stack );
     }
 
 
 
   }
+
+  async function checkRouteConflictOnline(kongaddr,headers,allRoutesChecked)
+  {
+    
+    logInfo( "this will check all existing routes acorss all workspaces and compare them with inso config to ensure that will not be any conflicting route.");
+
+    if(!process.argv[3]){
+      logError("Kong Conf file path not supplied");
+      process.exit(1);
+    }
+
+
+    var specFilePath = path.resolve(process.argv[3]);
+    logInfo("Kong conf file path set to " + specFilePath);
+    var conf = yaml.load(fs.readFileSync(specFilePath, "utf8"));
+   // get all worksapces
+   try{
+
+      var all =  (await axios.get(kongaddr + workspaceEndpoint , headers)).data.data;
+      // for(var wk of all){
+      var allDone = new Promise((resolve, reject) => {
+      all.forEach(async(wk, i, a)=>{
+        try{
+          let nextUrl = kongaddr + "/" + wk.name +  routeEndpoint + "?size=1000";
+          while(nextUrl){
+            var routes = (await axios.get(nextUrl, headers)).data;
+            routes.data.forEach(async(r,index,array)=>{
+            // for(var r of routes.data){
+              
+              // compares only the first set of route attributes. Using Inso generate config there is limited option to declare more.
+              var pathR = r.paths?r.paths[0]:'';
+              var host = r.hosts?r.hosts[0]:'';
+              var method = r.methods?r.methods[0]:'';
+              var header = r.headers?r.headers[0]:'';
+              
+
+              conf.services[0].routes.forEach( async(cr) => {
+
+                    var specpath = cr.paths?cr.paths[0]:'';
+                    var spechost = cr.hosts?cr.hosts[0]:'';
+                    var specmethod = cr.methods?cr.methods[0]:'';
+                    var specheader = cr.headers?cr.headers[0]:'';
+                    if(pathR == specpath && 
+                      host == spechost && 
+                      method == specmethod && 
+                      header == specheader){
+
+                    // if(r.paths.map(cr.paths) && 
+                    //  r.hosts.map(cr.hosts) && 
+                    //  r.methods.map(cr.methods) && 
+                    //  r.headers.includes(cr.headers)){
+                      logError( "Route conflict: \n Config route: " + JSON.stringify(cr) + "\n conflcited with  \n" + JSON.stringify(r) + "\n in workspace " + wk.name) ;
+                      process.stdout.write("0");
+                      process.exit(1);
+                    }
+                    else{
+                      ///
+                    }
+                // logInfo("route checked " + r.name);
+              })
+              
+
+            });
+            nextUrl=routes.next?kongaddr +  "/" + wk.name + routes.next  + "&size=1000":null;
+          }
+          
+          }catch(e){
+            logError(e.stack);
+            process.stdout.write("0");
+            process.exit(1);
+          }
+          if (i === a.length -1) resolve()
+         });
+      });
+
+      allDone.then(() => {
+        logInfo('All routes checked, no conflict found!');
+        process.stdout.write("retuncode:no-conflict");
+        process.exit(0);
+    });
+  }catch(e){
+    logError(e.stack);
+    process.stdout.write("0");
+    process.exit(1);
+
+  }
+}
+
+
+     
+
+   
+   
+    
+   
+  

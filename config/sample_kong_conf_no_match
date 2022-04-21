@@ -1,0 +1,38 @@
+_format_version: '1.1'
+services:
+  - name: Airport_info
+    protocol: http
+    host: Airport_info
+    port: 80
+    path: /airport
+    plugins: []
+    routes:
+      - tags:
+          - OAS3_import
+        name: Airport_info-Airport
+        methods:
+          - GET
+        paths:
+          - /airport$
+        strip_path: false
+        host: xyz
+      - tags:
+          - OAS3_import
+        name: Airport_info-Airport2
+        paths:
+          - /2972test1
+        strip_path: false
+    tags:
+      - OAS3_import
+    
+upstreams:
+  - name: Airport_info
+    targets:
+      - target: a.com:80
+        tags:
+          - OAS3_import
+      - target: b.com:80
+        tags:
+          - OAS3_import
+    tags:
+      - OAS3_import
