@@ -213,8 +213,8 @@ const commands = ['all','workspace','users','groups','wipe'];
                 res = await applyUsers(res,kongaddr,workspacedata.name,headers,userNameConfig,false, delete_existing_users )
               }
               if(command == 0 || command == 3) {
-                logInfo('Starting to add groups in the workspace path:' + configDir + "/" + workspacedata.name)
-                res = await applyGroups(configDir + "/" + workspacedata.name, path, kongaddr, headers, res);
+                logInfo('Starting to add groups in the workspace path:' + configDir + workspacedata.name)
+                res = await applyGroups(configDir + workspacedata.name, path, kongaddr, headers, res);
               }
             }
 
@@ -236,8 +236,8 @@ const commands = ['all','workspace','users','groups','wipe'];
               if(command == 0 || command == 2) // users
                 res = await applyUsers(res,kongaddr,workspacedata.name,headers,userNameConfig, true,delete_existing_users )
               if(command == 0 || command == 3) {
-                  logInfo('Starting to add groups in the workspace path:' + configDir + "/" + workspacedata.name)
-                  res = await applyGroups(configDir + "/" + workspacedata.name, path, kongaddr, headers, res);
+                  logInfo('Starting to add groups in the workspace path:' + configDir + workspacedata.name)
+                  res = await applyGroups(configDir + workspacedata.name, path, kongaddr, headers, res);
               }
             } else {
               logError(e.stack);
