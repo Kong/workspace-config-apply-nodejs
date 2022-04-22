@@ -1,0 +1,11 @@
+---
+- group_name: group-for-readonly-demo3
+  group_comment: readonly group
+  roles:
+  - workspace: demo3
+    role: readonlyrole
+- group_name: group-for-admins-demo3
+  group_comment: Admin group
+  roles:
+  - workspace: demo3
+    role: admin

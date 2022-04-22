@@ -1,0 +1,104 @@
+❯ node configurator.js all
+2022-04-21T10:09:48.363Z [INFO] Command line argument
+ all - Default (Add all).
+ workspace - Add Workspace + plugin.
+ users - Add Users only ( For non OIDC Kong Instances only).
+ groups - Add Groups only.
+2022-04-21T10:09:48.366Z [INFO] Argument: 0
+2022-04-21T10:09:48.367Z [INFO] Selected Workspace: all
+2022-04-21T10:09:48.367Z [INFO] PASSWORD method of authentication selected.
+2022-04-21T10:09:48.367Z [INFO] Calling auth endpoint..
+2022-04-21T10:09:48.529Z [INFO] Kong Status: {"memory":{"lua_shared_dicts":{"kong":{"capacity":"5.00 MiB","allocated_slabs":"0.04 MiB"},"kong_locks":{"capacity":"8.00 MiB","allocated_slabs":"0.06 MiB"},"kong_healthchecks":{"capacity":"5.00 MiB","allocated_slabs":"0.04 MiB"},"kong_process_events":{"capacity":"5.00 MiB","allocated_slabs":"5.00 MiB"},"kong_cluster_events":{"capacity":"5.00 MiB","allocated_slabs":"0.04 MiB"},"kong_rate_limiting_counters":{"capacity":"12.00 MiB","allocated_slabs":"0.08 MiB"},"kong_core_db_cache":{"capacity":"128.00 MiB","allocated_slabs":"0.77 MiB"},"kong_core_db_cache_miss":{"capacity":"12.00 MiB","allocated_slabs":"0.08 MiB"},"kong_db_cache":{"capacity":"128.00 MiB","allocated_slabs":"0.79 MiB"},"kong_db_cache_miss":{"capacity":"12.00 MiB","allocated_slabs":"0.08 MiB"},"kong_vitals_counters":{"capacity":"50.00 MiB","allocated_slabs":"0.30 MiB"},"kong_vitals_lists":{"capacity":"1.00 MiB","allocated_slabs":"0.02 MiB"},"kong_vitals":{"capacity":"1.00 MiB","allocated_slabs":"0.02 MiB"},"kong_counters":{"capacity":"1.00 MiB","allocated_slabs":"0.02 MiB"},"kong_reports_consumers":{"capacity":"10.00 MiB","allocated_slabs":"0.07 MiB"},"kong_reports_routes":{"capacity":"1.00 MiB","allocated_slabs":"0.02 MiB"},"kong_reports_services":{"capacity":"1.00 MiB","allocated_slabs":"0.02 MiB"},"kong_reports_workspaces":{"capacity":"1.00 MiB","allocated_slabs":"0.02 MiB"},"kong_keyring":{"capacity":"5.00 MiB","allocated_slabs":"0.04 MiB"},"prometheus_metrics":{"capacity":"5.00 MiB","allocated_slabs":"0.05 MiB"}},"workers_lua_vms":[{"pid":2141,"http_allocated_gc":"46.64 MiB"},{"pid":2142,"http_allocated_gc":"46.63 MiB"}]},"database":{"reachable":true},"server":{"connections_handled":543180,"connections_writing":4,"connections_waiting":0,"total_requests":548103,"connections_accepted":543180,"connections_active":4,"connections_reading":0}}
+2022-04-21T10:09:48.530Z [INFO]  Workspace config for workspace demo1 has been set to /Users/keithyuen/kong-plugins/workspace-config-apply-nodejs/config/root-workspace.yaml
+2022-04-21T10:09:48.617Z [INFO] Workspace demo1 does not exist. Creating ....
+2022-04-21T10:09:48.618Z [INFO] http://admin.kong.helm:8001/workspaces
+2022-04-21T10:09:48.696Z [INFO] Workspace demo1 created.
+2022-04-21T10:09:48.696Z [INFO] Applying roles now for workspace demo1
+2022-04-21T10:09:48.956Z [INFO] Permission {"endpoint":"*","negative":false,"actions":"read"} added for role readonlyrole in workspace demo1
+2022-04-21T10:09:49.145Z [INFO] Permission {"endpoint":"*","negative":false,"actions":"create,update,read,delete"} added for role admin in workspace demo1
+2022-04-21T10:09:49.247Z [INFO] Permission {"endpoint":"/rbac/*","negative":true,"actions":"create,update,read,delete"} added for role admin in workspace demo1
+2022-04-21T10:09:49.344Z [INFO] Permission {"endpoint":"/rbac/*/*","negative":true,"actions":"create,update,read,delete"} added for role admin in workspace demo1
+2022-04-21T10:09:49.428Z [INFO] Permission {"endpoint":"/rbac/*/*/*","negative":true,"actions":"create,update,read,delete"} added for role admin in workspace demo1
+2022-04-21T10:09:49.510Z [INFO] Permission {"endpoint":"/rbac/*/*/*/*","negative":true,"actions":"create,update,read,delete"} added for role admin in workspace demo1
+2022-04-21T10:09:49.602Z [INFO] Permission {"endpoint":"/rbac/*/*/*/*/*","negative":true,"actions":"create,update,read,delete"} added for role admin in workspace demo1
+2022-04-21T10:09:49.796Z [INFO] Permission {"endpoint":"*","negative":false,"actions":"create,update,delete"} added for role superadmin2 in workspace demo1
+2022-04-21T10:09:49.893Z [INFO] Permission {"endpoint":"/admins/*","negative":true,"actions":"create,update,read,delete"} added for role superadmin2 in workspace demo1
+2022-04-21T10:09:49.987Z [INFO] Permission {"endpoint":"/admin/*/roles","negative":true,"actions":"create,update,read,delete"} added for role superadmin2 in workspace demo1
+2022-04-21T10:09:50.071Z [INFO] Permission {"endpoint":"/rbac/*","negative":true,"actions":"create,update,read,delete"} added for role superadmin2 in workspace demo1
+2022-04-21T10:09:50.072Z [INFO] all roles and permissions successfully applied for the workspace demo1
+2022-04-21T10:09:50.450Z [INFO] plugins has been successfully applied for the workspace demo1
+2022-04-21T10:09:50.451Z [INFO] starting to add users in the workspace demo1
+2022-04-21T10:09:50.814Z [INFO]  User demo1read added in demo1
+2022-04-21T10:09:50.914Z [INFO]  Role readonlyrole added for user demo1read in demo1
+2022-04-21T10:09:51.204Z [INFO]  User demo1read2 added in demo1
+2022-04-21T10:09:51.319Z [INFO]  Role admin added for user demo1read2 in demo1
+2022-04-21T10:09:51.616Z [INFO]  User demo1admin1 added in demo1
+2022-04-21T10:09:51.704Z [ERROR] role not found with name 'superadmin'
+2022-04-21T10:09:51.802Z [INFO]  Role admin added for user demo1admin1 in demo1
+2022-04-21T10:09:51.803Z [INFO]  Workspace config for workspace demo2 has been set to /Users/keithyuen/kong-plugins/workspace-config-apply-nodejs/config/demo2/workspace.yaml
+2022-04-21T10:09:51.896Z [INFO] Workspace demo2 does not exist. Creating ....
+2022-04-21T10:09:51.896Z [INFO] http://admin.kong.helm:8001/workspaces
+2022-04-21T10:09:51.998Z [INFO] Workspace demo2 created.
+2022-04-21T10:09:51.999Z [INFO] Applying roles now for workspace demo2
+2022-04-21T10:09:52.212Z [INFO] Permission {"endpoint":"*","negative":false,"actions":"read"} added for role readonlyrole in workspace demo2
+2022-04-21T10:09:52.403Z [INFO] Permission {"endpoint":"*","negative":false,"actions":"create,update,read,delete"} added for role admin in workspace demo2
+2022-04-21T10:09:52.502Z [INFO] Permission {"endpoint":"/rbac/*","negative":true,"actions":"create,update,read,delete"} added for role admin in workspace demo2
+2022-04-21T10:09:52.602Z [INFO] Permission {"endpoint":"/rbac/*/*","negative":true,"actions":"create,update,read,delete"} added for role admin in workspace demo2
+2022-04-21T10:09:52.698Z [INFO] Permission {"endpoint":"/rbac/*/*/*","negative":true,"actions":"create,update,read,delete"} added for role admin in workspace demo2
+2022-04-21T10:09:52.789Z [INFO] Permission {"endpoint":"/rbac/*/*/*/*","negative":true,"actions":"create,update,read,delete"} added for role admin in workspace demo2
+2022-04-21T10:09:52.892Z [INFO] Permission {"endpoint":"/rbac/*/*/*/*/*","negative":true,"actions":"create,update,read,delete"} added for role admin in workspace demo2
+2022-04-21T10:09:53.073Z [INFO] Permission {"endpoint":"*","negative":false,"actions":"create,update,delete"} added for role superadmin2 in workspace demo2
+2022-04-21T10:09:53.162Z [INFO] Permission {"endpoint":"/admins/*","negative":true,"actions":"create,update,read,delete"} added for role superadmin2 in workspace demo2
+2022-04-21T10:09:53.247Z [INFO] Permission {"endpoint":"/admin/*/roles","negative":true,"actions":"create,update,read,delete"} added for role superadmin2 in workspace demo2
+2022-04-21T10:09:53.350Z [INFO] Permission {"endpoint":"/rbac/*","negative":true,"actions":"create,update,read,delete"} added for role superadmin2 in workspace demo2
+2022-04-21T10:09:53.351Z [INFO] all roles and permissions successfully applied for the workspace demo2
+2022-04-21T10:09:53.736Z [INFO] plugins has been successfully applied for the workspace demo2
+2022-04-21T10:09:53.736Z [INFO] starting to add users in the workspace demo2
+2022-04-21T10:09:54.028Z [INFO]  User demo2read added in demo2
+2022-04-21T10:09:54.152Z [INFO]  Role readonlyrole added for user demo2read in demo2
+2022-04-21T10:09:54.435Z [INFO]  User demo2read2 added in demo2
+2022-04-21T10:09:54.529Z [INFO]  Role admin added for user demo2read2 in demo2
+2022-04-21T10:09:54.813Z [INFO]  User demo2admin1 added in demo2
+2022-04-21T10:09:54.900Z [INFO]  Role superadmin2 added for user demo2admin1 in demo2
+2022-04-21T10:09:55.272Z [INFO]  User demo2admin2regular added in demo2
+2022-04-21T10:09:55.363Z [INFO]  Role admin added for user demo2admin2regular in demo2
+2022-04-21T10:09:55.364Z [INFO]  Workspace config for workspace demo3 has been set to /Users/keithyuen/kong-plugins/workspace-config-apply-nodejs/config/demo3/workspace.yaml
+2022-04-21T10:09:55.445Z [INFO] Workspace demo3 does not exist. Creating ....
+2022-04-21T10:09:55.446Z [INFO] http://admin.kong.helm:8001/workspaces
+2022-04-21T10:09:55.528Z [INFO] Workspace demo3 created.
+2022-04-21T10:09:55.528Z [INFO] Applying roles now for workspace demo3
+2022-04-21T10:09:55.735Z [INFO] Permission {"endpoint":"*","negative":false,"actions":"read"} added for role readonlyrole in workspace demo3
+2022-04-21T10:09:55.939Z [INFO] Permission {"endpoint":"*","negative":false,"actions":"create,update,read,delete"} added for role admin in workspace demo3
+2022-04-21T10:09:56.030Z [INFO] Permission {"endpoint":"/rbac/*","negative":true,"actions":"create,update,read,delete"} added for role admin in workspace demo3
+2022-04-21T10:09:56.119Z [INFO] Permission {"endpoint":"/rbac/*/*","negative":true,"actions":"create,update,read,delete"} added for role admin in workspace demo3
+2022-04-21T10:09:56.204Z [INFO] Permission {"endpoint":"/rbac/*/*/*","negative":true,"actions":"create,update,read,delete"} added for role admin in workspace demo3
+2022-04-21T10:09:56.347Z [INFO] Permission {"endpoint":"/rbac/*/*/*/*","negative":true,"actions":"create,update,read,delete"} added for role admin in workspace demo3
+2022-04-21T10:09:56.467Z [INFO] Permission {"endpoint":"/rbac/*/*/*/*/*","negative":true,"actions":"create,update,read,delete"} added for role admin in workspace demo3
+2022-04-21T10:09:56.647Z [INFO] Permission {"endpoint":"*","negative":false,"actions":"create,update,delete"} added for role superadmin2 in workspace demo3
+2022-04-21T10:09:56.723Z [INFO] Permission {"endpoint":"/admins/*","negative":true,"actions":"create,update,read,delete"} added for role superadmin2 in workspace demo3
+2022-04-21T10:09:56.808Z [INFO] Permission {"endpoint":"/admin/*/roles","negative":true,"actions":"create,update,read,delete"} added for role superadmin2 in workspace demo3
+2022-04-21T10:09:56.945Z [INFO] Permission {"endpoint":"/rbac/*","negative":true,"actions":"create,update,read,delete"} added for role superadmin2 in workspace demo3
+2022-04-21T10:09:56.945Z [INFO] all roles and permissions successfully applied for the workspace demo3
+2022-04-21T10:09:57.245Z [INFO] plugins has been successfully applied for the workspace demo3
+2022-04-21T10:09:57.246Z [INFO] starting to add users in the workspace demo3
+2022-04-21T10:09:57.559Z [INFO]  User demo3read11 added in demo3
+2022-04-21T10:09:57.665Z [INFO]  Role readonlyrole added for user demo3read11 in demo3
+2022-04-21T10:09:57.985Z [INFO]  User demo3read22 added in demo3
+2022-04-21T10:09:58.077Z [INFO]  Role admin added for user demo3read22 in demo3
+2022-04-21T10:09:58.499Z [INFO]  User demo3admin11 added in demo3
+2022-04-21T10:09:58.589Z [INFO]  Role superadmin2 added for user demo3admin11 in demo3
+2022-04-21T10:09:59.012Z [INFO]  User demo3admin22regular added in demo3
+2022-04-21T10:09:59.153Z [INFO]  Role admin added for user demo3admin22regular in demo3
+2022-04-21T10:09:59.155Z [INFO]  Workspace config for workspace rename-this-to-default has been set to /Users/keithyuen/kong-plugins/workspace-config-apply-nodejs/config/rename-this-to-default/workspace.yaml
+2022-04-21T10:09:59.251Z [INFO] Workspace rename-this-to-default does not exist. Creating ....
+2022-04-21T10:09:59.252Z [INFO] http://admin.kong.helm:8001/workspaces
+2022-04-21T10:09:59.344Z [INFO] Workspace rename-this-to-default created.
+2022-04-21T10:09:59.345Z [INFO] Applying roles now for workspace rename-this-to-default
+2022-04-21T10:09:59.536Z [INFO] Permission {"endpoint":"*","negative":false,"actions":"read","workspace":"*"} added for role custom-read-only in workspace rename-this-to-default
+2022-04-21T10:09:59.537Z [INFO] all roles and permissions successfully applied for the workspace rename-this-to-default
+2022-04-21T10:09:59.537Z [INFO] plugins has been successfully applied for the workspace rename-this-to-default
+2022-04-21T10:09:59.538Z [INFO] starting to add users in the workspace rename-this-to-default
+2022-04-21T10:09:59.827Z [INFO]  User custom-read added in rename-this-to-default
+2022-04-21T10:09:59.902Z [INFO]  Role custom-read-only added for user custom-read in rename-this-to-default
+2022-04-21T10:09:59.902Z [INFO] Calling auth endpoint to logout in 5 seconds...
+2022-04-21T10:10:04.991Z [INFO]  Logout complete. System exiting..

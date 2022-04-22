@@ -1,0 +1,25 @@
+❯ node configurator.js groups
+2022-04-21T10:13:01.596Z [INFO] Command line argument
+ all - Default (Add all).
+ workspace - Add Workspace + plugin.
+ users - Add Users only ( For non OIDC Kong Instances only).
+ groups - Add Groups only.
+2022-04-21T10:13:01.599Z [INFO] Argument: 3
+2022-04-21T10:13:01.599Z [INFO] Selected Workspace: all
+2022-04-21T10:13:01.599Z [INFO] PASSWORD method of authentication selected.
+2022-04-21T10:13:01.599Z [INFO] Calling auth endpoint..
+2022-04-21T10:13:01.778Z [INFO] Kong Status: {"memory":{"lua_shared_dicts":{"kong":{"capacity":"5.00 MiB","allocated_slabs":"0.04 MiB"},"kong_locks":{"capacity":"8.00 MiB","allocated_slabs":"0.06 MiB"},"kong_healthchecks":{"capacity":"5.00 MiB","allocated_slabs":"0.04 MiB"},"kong_process_events":{"capacity":"5.00 MiB","allocated_slabs":"4.57 MiB"},"kong_cluster_events":{"capacity":"5.00 MiB","allocated_slabs":"0.04 MiB"},"kong_rate_limiting_counters":{"capacity":"12.00 MiB","allocated_slabs":"0.08 MiB"},"kong_core_db_cache":{"capacity":"128.00 MiB","allocated_slabs":"0.77 MiB"},"kong_core_db_cache_miss":{"capacity":"12.00 MiB","allocated_slabs":"0.08 MiB"},"kong_db_cache":{"capacity":"128.00 MiB","allocated_slabs":"0.80 MiB"},"kong_db_cache_miss":{"capacity":"12.00 MiB","allocated_slabs":"0.08 MiB"},"kong_vitals_counters":{"capacity":"50.00 MiB","allocated_slabs":"0.30 MiB"},"kong_vitals_lists":{"capacity":"1.00 MiB","allocated_slabs":"0.02 MiB"},"kong_vitals":{"capacity":"1.00 MiB","allocated_slabs":"0.02 MiB"},"kong_counters":{"capacity":"1.00 MiB","allocated_slabs":"0.02 MiB"},"kong_reports_consumers":{"capacity":"10.00 MiB","allocated_slabs":"0.07 MiB"},"kong_reports_routes":{"capacity":"1.00 MiB","allocated_slabs":"0.02 MiB"},"kong_reports_services":{"capacity":"1.00 MiB","allocated_slabs":"0.02 MiB"},"kong_reports_workspaces":{"capacity":"1.00 MiB","allocated_slabs":"0.02 MiB"},"kong_keyring":{"capacity":"5.00 MiB","allocated_slabs":"0.04 MiB"},"prometheus_metrics":{"capacity":"5.00 MiB","allocated_slabs":"0.05 MiB"}},"workers_lua_vms":[{"pid":2141,"http_allocated_gc":"46.64 MiB"},{"pid":2142,"http_allocated_gc":"46.63 MiB"}]},"database":{"reachable":true},"server":{"connections_writing":4,"total_requests":548375,"connections_waiting":0,"connections_handled":543334,"connections_accepted":543334,"connections_active":4,"connections_reading":0}}
+2022-04-21T10:13:01.779Z [INFO]  Workspace config for workspace demo1 has been set to /Users/keithyuen/kong-plugins/workspace-config-apply-nodejs/config/root-workspace.yaml
+2022-04-21T10:13:01.874Z [INFO]  Workspace config for workspace demo2 has been set to /Users/keithyuen/kong-plugins/workspace-config-apply-nodejs/config/demo2/workspace.yaml
+2022-04-21T10:13:01.956Z [INFO]  Workspace config for workspace demo3 has been set to /Users/keithyuen/kong-plugins/workspace-config-apply-nodejs/config/demo3/workspace.yaml
+2022-04-21T10:13:02.022Z [INFO]  Workspace config for workspace rename-this-to-default has been set to /Users/keithyuen/kong-plugins/workspace-config-apply-nodejs/config/rename-this-to-default/workspace.yaml
+2022-04-21T10:13:02.097Z [INFO]  Adding groups in manager. It's important that you have created the workspaces and associated roles already, otherwise this will not work
+2022-04-21T10:13:02.186Z [INFO] Group group-for-readonly created
+2022-04-21T10:13:02.542Z [INFO]  Role created in group group-for-readonly mapping workspace demo1 and role readonlyrole
+2022-04-21T10:13:02.811Z [INFO]  Role created in group group-for-readonly mapping workspace demo2 and role readonlyrole
+2022-04-21T10:13:02.905Z [INFO] Group group-for-admins created
+2022-04-21T10:13:03.243Z [INFO]  Role created in group group-for-admins mapping workspace demo1 and role admin
+2022-04-21T10:13:03.525Z [INFO]  Role created in group group-for-admins mapping workspace demo2 and role admin
+2022-04-21T10:13:03.821Z [INFO]  Role created in group group-for-admins mapping workspace demo3 and role admin
+2022-04-21T10:13:03.822Z [INFO] Calling auth endpoint to logout in 5 seconds...
+2022-04-21T10:13:08.938Z [INFO]  Logout complete. System exiting..

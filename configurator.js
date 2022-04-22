@@ -32,7 +32,7 @@ const commands = ['all','workspace','users','groups','wipe'];
     var workspacename;
     var rolename;
     var workspaceConfig;
-    
+
     /*
     Command line argument
     0 Default (Add all).
@@ -44,16 +44,16 @@ const commands = ['all','workspace','users','groups','wipe'];
    // With Node Js first command is node and second is the app file name. Any additional command is index position 2.
 
     logInfo("Command line argument \n all - Default (Add all). \n workspace - Add Workspace + plugin. \n users - Add Users only ( For non OIDC Kong Instances only). \n groups - Add Groups only.");
-  
-    //get the command index from the defined commands array	  
+
+    //get the command index from the defined commands array
     let command = commands.indexOf(process.argv[2]?process.argv[2]:1);
 
-    //if command does not exist in the array then default to 1	  
+    //if command does not exist in the array then default to 1
     if (command == -1) {
       logError("Command not found please select one of the valid options above");
       process.exit("0");
     }
-	  
+
     logInfo('Argument: ' + command );
     if(! ["0","1","2","3", "4"].includes(command.toString())){
       logError("Invalid argument passed.")
@@ -70,8 +70,8 @@ const commands = ['all','workspace','users','groups','wipe'];
       configDir = process.env.CONFIG_DIR;
     }
 
-    
-    
+
+
     //check auth method . Session cookie(COOKIE) or rbac token ( RBAC)
     if (!process.env.AUTH_METHOD){
       logError("Env variable AUTH_METHOD must be set");
@@ -141,7 +141,7 @@ const commands = ['all','workspace','users','groups','wipe'];
           process.exit(1);
         }
     }
-    
+
     // test connectivity to admin API
     try
     {
@@ -156,13 +156,13 @@ const commands = ['all','workspace','users','groups','wipe'];
     let delete_existing_users = true;
     if (process.env.FEATURE_DELETE_EXISTING_USERS) {
       delete_existing_users = process.env.FEATURE_DELETE_EXISTING_USERS === 'true'
-      
+
     }
     // delete existing roles?
     let delete_existing_roles = true;
     if (process.env.FEATURE_DELETE_EXISTING_ROLES) {
       delete_existing_roles= process.env.FEATURE_DELETE_EXISTING_ROLES === 'true'
-      
+
     }
 
     // FEATURE_FORCE_WIPE_WORKSPACE true will wipe an worksapce even if there are entities present. USE WITH CAUTION.
@@ -180,21 +180,21 @@ const commands = ['all','workspace','users','groups','wipe'];
 
 
     // get all top level dirs of config. Each subfolder will denote configs of one workspace
-    
+
     const getDirectories = source =>fs.readdirSync(source, { withFileTypes: true }).filter(dirent => dirent.isDirectory()).map(dirent => dirent.name)
     var dirs=getDirectories(path.resolve(__dirname,configDir));
 
     for(dir in dirs)  // looping through folders
     {
       if(selectedWorkspace == "all" || selectedWorkspace.trim() == dirs[dir]){
-        
-        var workSpaceFilePath =  fs.existsSync(path.resolve(configDir,dirs[dir],workSpaceConfigName))? 
-                                  path.resolve(configDir,dirs[dir],workSpaceConfigName): 
+
+        var workSpaceFilePath =  fs.existsSync(path.resolve(configDir,dirs[dir],workSpaceConfigName))?
+                                  path.resolve(configDir,dirs[dir],workSpaceConfigName):
                                   path.resolve(configDir,rootWorkSpaceConfig);
         logInfo(' Workspace config for workspace ' + dirs[dir] + ' has been set to ' + workSpaceFilePath );
         var workSpaceConfig = yaml.load(fs.readFileSync( workSpaceFilePath), 'utf8');
         var userNameConfig = yaml.load(fs.readFileSync(path.resolve(configDir,dirs[dir],userNameConfigName), 'utf8'));
-        
+
         var workspacedata = {'name': dirs[dir],'config': workSpaceConfig.config}
         var res = '';
 
@@ -209,11 +209,15 @@ const commands = ['all','workspace','users','groups','wipe'];
                 res= await applyRbac(res, kongaddr, headers, workspacedata.name, workSpaceConfig.rbac,delete_existing_roles, false);
                 res= await applyPlugins(res, kongaddr,workspacedata.name,workSpaceConfig.plugins,headers, false );
               }
-              if(command == 0 || command == 2) // users
-               res = await applyUsers(res,kongaddr,workspacedata.name,headers,userNameConfig,false, delete_existing_users )
-                
+              if(command == 0 || command == 2) {
+                res = await applyUsers(res,kongaddr,workspacedata.name,headers,userNameConfig,false, delete_existing_users )
+              }
+              if(command == 0 || command == 3) {
+                logInfo('Starting to add groups in the workspace path:' + configDir + "/" + workspacedata.name)
+                res = await applyGroups(configDir + "/" + workspacedata.name, path, kongaddr, headers, res);
+              }
             }
-    
+
           } catch (e) {
             if (e.response.status == 404) {
               if(command==0 || command==1){
@@ -228,8 +232,12 @@ const commands = ['all','workspace','users','groups','wipe'];
                 }catch(e){
                    logError(e);
                 }
+              }
               if(command == 0 || command == 2) // users
                 res = await applyUsers(res,kongaddr,workspacedata.name,headers,userNameConfig, true,delete_existing_users )
+              if(command == 0 || command == 3) {
+                  logInfo('Starting to add groups in the workspace path:' + configDir + "/" + workspacedata.name)
+                  res = await applyGroups(configDir + "/" + workspacedata.name, path, kongaddr, headers, res);
               }
             } else {
               logError(e.stack);
@@ -240,11 +248,11 @@ const commands = ['all','workspace','users','groups','wipe'];
       }
 
       // Add groups. These are cross workspaces and roles.
-      if( command == 3){
-            
-        res= await applyGroups(configDir, path, kongaddr, headers, res);
+      //if( command == 3){
 
-          }
+      //  res= await applyGroups(configDir, path, kongaddr, headers, res);
+
+      //}
 
   // log out
   if (process.env.AUTH_METHOD == 'PASSWORD'){
@@ -254,28 +262,28 @@ const commands = ['all','workspace','users','groups','wipe'];
       await new Promise(resolve => setTimeout(resolve, 5000));
       var logOut = await axios.delete(kongaddr + authEndpoint + "?session_logout=true", headers);
       logInfo( " Logout complete. System exiting..") ;
-     
+
     }catch(e){
       logError("Logout failed. It's likely that user wasn't fully logged in at this point" + e);
       process.exit(1);
     }
 }
-  
+
   } catch (e) {
     logError(e.stack);
   }
-   
+
 })();
 
 async function applyRbac(res, kongaddr, headers, workspacename, rbac,  delete_existing_roles, isNew=true,) {
 
-  
+
   logInfo("Applying roles now for workspace " + workspacename);
-  
-  if(!isNew && delete_existing_roles) // existing workspace but not default.. delete the current role. 
+
+  if(!isNew && delete_existing_roles) // existing workspace but not default.. delete the current role.
   {
-    
-    
+
+
     logWarn("Deleting current roles. If you do not want this set FEATURE_DELETE_EXISTING_ROLES to false and run again. Execution will pause for few seconds to allow stop. Kong strongly recommends not to delete existing roles in 'default' workspace using this tool");
     await new Promise(resolve => setTimeout(resolve, 8000));
     if (workspacename == "default"){
@@ -318,7 +326,7 @@ async function applyPlugins(res, kongaddr, workspacename, plugins, headers, isNe
   try {
 
    if(!isNew){ // existing workspace.
-   
+
     var currentPlugins = await axios.get(kongaddr + '/' + workspacename + pluginsEndpoint, headers);
       for (var oldPlugin of currentPlugins.data.data) {
         if (oldPlugin.route == null && oldPlugin.service == null) {
@@ -327,10 +335,10 @@ async function applyPlugins(res, kongaddr, workspacename, plugins, headers, isNe
           logError('plugin ' + oldPlugin.name + ' has service or route associated with it. can not be deleted');
         }
       }
-   
+
    }
 
-    
+
     if (plugins) {
       for (var plugin of plugins) {
         res = await axios.post(kongaddr + '/' + workspacename + pluginsEndpoint, plugin, headers);
@@ -338,7 +346,7 @@ async function applyPlugins(res, kongaddr, workspacename, plugins, headers, isNe
   }
 
   logInfo('plugins has been successfully applied for the workspace ' + workspacename );
-    
+
   } catch (e) {
     logError('plugin deployment failed: ' + e.stack);
   }
@@ -353,14 +361,14 @@ async function applyUsers(res, kongaddr, workspacename,  headers, users, isnew, 
   logInfo('starting to add users in the workspace ' + workspacename)
   for (var user of users) {
     var userdata = {"username": user.name, "email" : user.email, "rbac_token_enabled": false};
-   
+
     try {
       res = await axios.get(kongaddr + '/' + workspacename + adminEndpoint + '/' + user.name, headers);
       if (res.status == 200) {//user exists
         logWarn(' User ' + user.name + ' exists in ' +  workspacename)
         res = await axios.patch(kongaddr + '/' + workspacename + adminEndpoint + '/' + user.name, user, headers);
         logInfo(' For user ' + user.name + ' config reapplied in ' + workspacename);
- 
+
       }
     } catch (e) {
       if (e.response.status == 404) {
@@ -377,13 +385,13 @@ async function applyUsers(res, kongaddr, workspacename,  headers, users, isnew, 
         logError(e.stack + " Unable to add users. Please check config.");
       }
     }
-    
+
       // add new roles
       for (var role of user.roles) {
         try{
           res = await axios.post(kongaddr + '/' + workspacename + adminEndpoint + '/' + user.name + rolesEndpoint, {"roles" : role}, headers);
           logInfo(' Role ' + role + ' added for user ' + user.name  + ' in ' + workspacename);
-          
+
         }catch(e){
           if(e.response.data.code == 3) { //role exists
             logWarn(' Role ' + role + ' already present for user ' + user.name + ' in ' + workspacename);
@@ -395,7 +403,7 @@ async function applyUsers(res, kongaddr, workspacename,  headers, users, isnew, 
 
 
 
-    
+
   }
     if(delete_existing_users){
       //in the end remove users not on the config
@@ -421,14 +429,14 @@ async function applyUsers(res, kongaddr, workspacename,  headers, users, isnew, 
         logError(' Deletetion of old roles failed. ' + e )
       }
     }
-  
+
   return res;
 }
 
 async function applyGroups(configDir, path, kongaddr, headers, res){
   logInfo( " Adding groups in manager. It's important that you have created the workspaces and associated roles already, otherwise this will not work");
   var groupConf = yaml.load(fs.readFileSync(path.resolve(configDir,groupConfig), 'utf8'));
- 
+
     for(var groupInfo of groupConf){
       let groupId;
       try{
@@ -450,11 +458,11 @@ async function applyGroups(configDir, path, kongaddr, headers, res){
             }else{logError(e)}
         }
         // now add new roles
-        
 
-          
+
+
           // get group id. By this time, the group shall exist.
-          if(!groupId)   
+          if(!groupId)
             groupId = (await axios.get(kongaddr + groupEndpoint + "/" + groupInfo.group_name, headers)).data.id;
           for(var role of groupInfo.roles){
             try{
@@ -491,14 +499,14 @@ async function applyGroups(configDir, path, kongaddr, headers, res){
                     //Safe to ignore. Just that the role/worksapce combination exists
                     //logError(e.response.data.message);
                     }
-                  
+
                 }
                 else
                   logError(e);
-            
+
             }
           }
-        
+
 
  }
 }
@@ -509,7 +517,7 @@ async function  getDirectories(path) {
   });
 }
 
-// logger wrapper. 
+// logger wrapper.
 async function  logInfo  (logtext){
     if (logtext){
       try{
@@ -609,7 +617,7 @@ async function  logInfo  (logtext){
           let nextUrl = kongaddr   + "/" + wipeWorkspaceName + "/" + key.replace("_", "/");
           while (nextUrl){
             var entities = await axios.get(nextUrl , headers);
-            
+
             for(var e in entities.data.data){
               await axios.delete(kongaddr   + "/" + wipeWorkspaceName + "/" + key.replace("_", "/") + "/" + entities.data.data[e].id , headers);
               logWarn(key + " with id " +  entities.data.data[e].id + " deleted")
@@ -623,8 +631,8 @@ async function  logInfo  (logtext){
         logWarn("Workspace is empty now. Ready for deletion");
         await axios.delete(kongaddr + workspaceEndpoint  + "/" + wipeWorkspaceName , headers);
         logWarn("Workspace " + wipeWorkspaceName + " wiped" );
-        
-      
+
+
 
 
     }catch(e){
