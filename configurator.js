@@ -236,6 +236,7 @@ const commands = ['all','workspace','users','groups','wipe'];
               if(command == 0 || command == 2) {
                 res = await applyUsers(res,kongaddr,workspacedata.name,headers,userNameConfig, true,delete_existing_users )
               }
+              // Add group for workspace based on groups-and-roles.yaml in the workspace folder
               if(command == 0 || command == 3) {
                   logInfo('Starting to add groups in the workspace path:' + configDir + workspacedata.name)
                   res = await applyGroups(configDir + workspacedata.name, path, kongaddr, headers, res);
