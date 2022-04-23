@@ -2,5 +2,5 @@
 - group_name: group-for-readonly-default
   group_comment: readonly group
   roles:
-  - workspace: default
+  - workspace: test-default
     role: custom-read-only
