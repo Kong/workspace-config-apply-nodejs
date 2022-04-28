@@ -1,4 +1,4 @@
-# How to check route conflicts on the pipeline if you have a large nuber of routes, and for performance reasons wnats to switch off smart route validator.
+# How to check route conflicts on the pipeline if you have a large nuber of routes, and for performance reasons wants to switch off smart route validator.
 
 
 
@@ -70,6 +70,37 @@ npm install
 ```
 ./checkroute.sh {kong-admin-api-base-url:8001} {token} {kong-config-path} [current-workspace]
 Optional {current-workspace} will be skipped for route conflict check. 
+
+--Success 
+
+Route validation starting: Thu 28 Apr 2022 19:29:22 BST
+2022-04-28T18:29:23.080Z [INFO] Command line argument 
+ all - Default (Add all). 
+ workspace - Add Workspace + plugin. 
+ users - Add Users only ( For non OIDC Kong Instances only). 
+ groups - Add Groups only.  
+ wipe workspace, optional force delete. 
+ validate-route - against the kong conf
+2022-04-28T18:29:23.084Z [INFO] Argument: 5
+2022-04-28T18:29:23.084Z [INFO] Selected Workspace: config/sample_kong_conf_no_match
+2022-04-28T18:29:23.085Z [INFO] RBAC method of authentication selected
+2022-04-28T18:29:23.085Z [INFO] this will check all existing routes acorss all workspaces and compare them with inso config to ensure that will not be any conflicting route.
+2022-04-28T18:29:23.085Z [INFO] Kong conf file path set to /Users/aviksengupta/codes/workspace-config-apply/workspace-config-apply-nodejs/config/sample_kong_conf_no_match
+2022-04-28T18:29:29.085Z [INFO] All routes checked (4584 ), no conflict found!
+retuncode:no-conflict
+Route validation finished: Thu 28 Apr 2022 19:29:29 BST
+no route conflict. do stuff
+if [[ "$v" == *"$successcode"* ]]; then
+  echo "no route conflict. do stuff"
+fi
+
+--Conflict
+2022-04-28T18:34:32.381Z [ERROR] Route conflict: 
+ Config route: {"tags":["OAS3_import"],"name":"Airport_info-Airport2","paths":["/133test"],"strip_path":false}
+ conflcited with  
+{"https_redirect_status_code":426,"headers":null,"service":{"id":"24c6582f-948d-4410-a16a-68329304c6a4"},"paths":["/133test"],"methods":null,"sources":null,"destinations":null,"strip_path":true,"name":"1-route-33","protocols":["http","https"],"path_handling":"v0","snis":null,"created_at":1650626561,"id":"05d911b0-9775-45b8-8261-1bb3a75acfe2","tags":null,"request_buffering":true,"response_buffering":true,"hosts":null,"preserve_host":false,"regex_priority":0,"updated_at":1650626561}
+ in workspace workspace1
+
 ````
 
 
