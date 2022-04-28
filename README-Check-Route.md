@@ -1,4 +1,4 @@
-# How to check route conflicts on the pipeline if you have a large nuber of routes, and for performance reasons wnats to switch off smart route validator.
+# How to check route conflicts on the pipeline if you have a large nuber of routes, and for performance reasons wants to switch off smart route validator.
 
 
 
