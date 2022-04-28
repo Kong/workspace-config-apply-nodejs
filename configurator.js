@@ -652,20 +652,25 @@ async function  logInfo  (logtext){
 
   }
 
-  async function checkRouteConflictOnline(kongaddr,headers,allRoutesChecked)
+  async function checkRouteConflictOnline(kongaddr,headers)
   {
-    
-    logInfo( "this will check all existing routes acorss all workspaces and compare them with inso config to ensure that will not be any conflicting route.");
+    try{
+      logInfo( "this will check all existing routes acorss all workspaces and compare them with inso config to ensure that will not be any conflicting route.");
+      var count = 0;
+      if(!process.argv[3]){
+        logError("Kong Conf file path not supplied");
+        process.exit(1);
+      }
 
-    if(!process.argv[3]){
-      logError("Kong Conf file path not supplied");
+      var workspaceNameToSkip = process.argv[4]?process.argv[4]:""; 
+      var specFilePath = path.resolve(process.argv[3]);
+      logInfo("Kong conf file path set to " + specFilePath);
+      var conf = yaml.load(fs.readFileSync(specFilePath, "utf8"));
+    }catch(e){            
+      logError(e.stack);
+      process.stdout.write("0");
       process.exit(1);
     }
-
-
-    var specFilePath = path.resolve(process.argv[3]);
-    logInfo("Kong conf file path set to " + specFilePath);
-    var conf = yaml.load(fs.readFileSync(specFilePath, "utf8"));
    // get all worksapces
    try{
 
@@ -674,34 +679,40 @@ async function  logInfo  (logtext){
       var allDone = new Promise((resolve, reject) => {
       all.forEach(async(wk, i, a)=>{
         try{
-          let nextUrl = kongaddr + "/" + wk.name +  routeEndpoint + "?size=1000";
-          while(nextUrl){
-            var routes = (await axios.get(nextUrl, headers)).data;
-            routes.data.forEach(async(r,index,array)=>{
-           
-
-              conf.services[0].routes.forEach( async(cr) => {
-
+          if(wk.name!=workspaceNameToSkip){
+            // current workspace route check will be skipped, as that will allow devs to update current route. 
+            //Deck Sync will take care of the update.
+            let nextUrl = kongaddr + "/" + wk.name +  routeEndpoint + "?size=800";
+            while(nextUrl){
+              var routes = (await axios.get(nextUrl, headers)).data;
+              routes.data.forEach(async(r,index,array)=>{
             
-                    if((isMatch(r.paths, cr.paths)) &&
-                      (isMatch(r.hosts, cr.hosts)) &&
-                      (isMatch(r.methods, cr.methods )) &&
-                      (isMatch(r.headers, cr.headers))) {
-                
-                    
-                      logError( "Route conflict: \n Config route: " + JSON.stringify(cr) + "\n conflcited with  \n" + JSON.stringify(r) + "\n in workspace " + wk.name) ;
-                      process.stdout.write("0");
-                      process.exit(1);
-                    }
-                    else{
-                      ///
-                    }
-                // logInfo("route checked " + r.name);
-              })
-              
 
-            });
-            nextUrl=routes.next?kongaddr +  "/" + wk.name + routes.next  + "&size=1000":null;
+                conf.services[0].routes.forEach( async(cr) => {
+
+              
+                      if((isMatch(r.paths, cr.paths)) &&
+                        (isMatch(r.hosts, cr.hosts)) &&
+                        (isMatch(r.methods, cr.methods )) &&
+                        (isMatch(r.headers, cr.headers))) {
+                  
+                      
+                        logError( "Route conflict: \n Config route: " + JSON.stringify(cr) + "\n conflcited with  \n" + JSON.stringify(r) + "\n in workspace " + wk.name) ;
+                        process.stdout.write("0");
+                        process.exit(1);
+                      }
+                      else{
+                        ///
+                      }
+                  // logInfo("route checked " + r.name + " workspace " + wk.name);
+                  
+                })
+                // logInfo("route number checked " + ++count);
+                ++count;
+
+              });
+              nextUrl=routes.next?kongaddr +  "/" + wk.name + routes.next  + "&size=800":null;
+            }
           }
           
           }catch(e){
@@ -714,7 +725,7 @@ async function  logInfo  (logtext){
       });
 
       allDone.then(() => {
-        logInfo('All routes checked, no conflict found!');
+        logInfo('All routes checked (' +  count + ' ), no conflict found!');
         process.stdout.write("retuncode:no-conflict");
         process.exit(0);
     });

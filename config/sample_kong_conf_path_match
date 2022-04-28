@@ -20,7 +20,7 @@ services:
           - OAS3_import
         name: Airport_info-Airport2
         paths:
-          - /2835beta
+          - /133test
         strip_path: false
     tags:
       - OAS3_import
