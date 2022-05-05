@@ -1,5 +1,5 @@
 ---
-- group_name: group-for-readonly-demo1
+- group_name: ae2d7892-2783-209e-aa92-54bae8d8bs11sa
   group_comment: readonly group
   roles:
   - workspace: demo1

@@ -1,0 +1,11 @@
+---
+- group_name: tes9e892-2783-209e-aa92-54bae8d8bs990k
+  group_comment: readonly group (new object ID)
+  roles:
+  - workspace: hap-uk-cto-015-dev
+    role: readonlyrole
+- group_name: ei3d2292-2783-209e-aa92-89dkd2lsme1alk
+  group_comment: Admin group (object ID)
+  roles:
+  - workspace: hap-uk-cto-015-dev
+    role: admin

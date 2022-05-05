@@ -194,6 +194,7 @@ const commands = ['all','workspace','users','groups','wipe'];
         logInfo(' Workspace config for workspace ' + dirs[dir] + ' has been set to ' + workSpaceFilePath );
         var workSpaceConfig = yaml.load(fs.readFileSync( workSpaceFilePath), 'utf8');
         var userNameConfig = yaml.load(fs.readFileSync(path.resolve(configDir,dirs[dir],userNameConfigName), 'utf8'));
+        var groupConf = yaml.load(fs.readFileSync(path.resolve(configDir,dirs[dir],groupConfig), 'utf8'));
 
         var workspacedata = {'name': dirs[dir],'config': workSpaceConfig.config}
         var res = '';
@@ -214,7 +215,7 @@ const commands = ['all','workspace','users','groups','wipe'];
               }
               if(command == 0 || command == 3) {
                 logInfo('Starting to add groups in the workspace path:' + configDir + workspacedata.name)
-                res = await applyGroups(configDir + workspacedata.name, path, kongaddr, headers, res);
+                res = await applyGroups(configDir, path, kongaddr, headers, res, groupConf);
               }
             }
 
@@ -239,7 +240,7 @@ const commands = ['all','workspace','users','groups','wipe'];
               // Add group for workspace based on groups-and-roles.yaml in the workspace folder
               if(command == 0 || command == 3) {
                   logInfo('Starting to add groups in the workspace path:' + configDir + workspacedata.name)
-                  res = await applyGroups(configDir + workspacedata.name, path, kongaddr, headers, res);
+                  res = await applyGroups(configDir, path, kongaddr, headers, res, groupConf);
               }
             } else {
               logError(e.stack);
@@ -435,82 +436,73 @@ async function applyUsers(res, kongaddr, workspacename,  headers, users, isnew, 
   return res;
 }
 
-async function applyGroups(configDir, path, kongaddr, headers, res){
+async function applyGroups(configDir, path, kongaddr, headers, res, groupConf){
   logInfo( " Adding groups in manager. It's important that you have created the workspaces and associated roles already, otherwise this will not work");
-  var groupConf = yaml.load(fs.readFileSync(path.resolve(configDir,groupConfig), 'utf8'));
+  //var groupConf = yaml.load(fs.readFileSync(path.resolve(configDir,groupConfig), 'utf8'));
 
-    for(var groupInfo of groupConf){
-      let groupId;
-      try{
-        var groupData = { "name" : groupInfo.group_name, "comment": groupInfo.group_comment };
-        res = await axios.post(kongaddr + groupEndpoint, groupData, headers);
-        logInfo('Group ' + groupInfo.group_name + " created")
-        }catch(e){
-            if(e.response.status == 409){
-              try{
-                logWarn('Group ' + groupInfo.group_name + " already exists")
-                groupId  = (await axios.get(kongaddr + groupEndpoint + "/" + groupInfo.group_name, headers)).data.id;
-                // delete current roles from group
-                var groupRoles = await axios.get(kongaddr + groupEndpoint + "/" +  groupInfo.group_name +  rolesEndpoint , headers);
-                for(var role of groupRoles.data.data){
-                  logInfo("role " + role.rbac_role.name + " exists for workspace with id : " +  role.workspace.id );
+  for(var groupInfo of groupConf){
+    let groupId;
+    try{
+      var groupData = { "name" : groupInfo.group_name, "comment": groupInfo.group_comment };
+      res = await axios.post(kongaddr + groupEndpoint, groupData, headers);
+      logInfo('Group ' + groupInfo.group_name + " created")
+    }catch(e){
+        if(e.response.status == 409){
+          try{
+            logInfo('Group ' + groupInfo.group_name + " already exists")
+            groupId  = (await axios.get(kongaddr + groupEndpoint + "/" + groupInfo.group_name, headers)).data.id;
+            // Check current roles from group
+            var groupRoles = await axios.get(kongaddr + groupEndpoint + "/" +  groupInfo.group_name +  rolesEndpoint , headers);
+            for(var role of groupRoles.data.data){
+              logInfo("role " + role.rbac_role.name + " exists for workspace with id : " +  role.workspace.id );
+            }
+          }catch(ex){logError(ex)};
+
+        }else{logError(e)}
+    }
+    // now add new roles
+
+    // get all workspaces
+    var workspaces = await axios.get(kongaddr + workspaceEndpoint , headers);
+
+    // get group id. By this time, the group shall exist.
+    if(!groupId)
+      groupId = (await axios.get(kongaddr + groupEndpoint + "/" + groupInfo.group_name, headers)).data.id;
+
+    for(var role of groupInfo.roles){
+        try{
+          // get workspace that matches with the name in yaml groups.roles.workspace.
+            var wk = workspaces.data.data.filter( f => f.name == role.workspace)[0];
+            var wkId = null;
+
+            // get role that matches with the name in yaml groups.roles.role.
+            var wkRoles = await axios.get(kongaddr  + "/" + role.workspace + rbacEndpoint + rolesEndpoint , headers);
+            var roleId = wkRoles.data.data.filter( r => r.name == role.role)[0].id;
+            // create role data
+            var roleData = { "workspace_id": wk.id , "rbac_role_id" : roleId}
+
+            res = await axios.post( kongaddr + groupEndpoint + "/" + groupId + rolesEndpoint, roleData , headers);
+            logInfo (' Role created in group ' + groupInfo.group_name + " mapping workspace " + role.workspace + " and role " + role.role  );
+          }catch(e){
+            // Awareness. Group-roles post throws a 400 bad request instead of 409 conflict when records exists.
+            if(e.response.data.message)
+            {
+              if (!e.response.data.message.includes("primary key violation on key"))
+                  logError(e.response.data.message);
+              else {
+                //Safe to ignore. Just that the role/worksapce combination exists
+                //logError(e.response.data.message);
                 }
-              }catch(ex){logError(ex)};
-
-            }else{logError(e)}
-        }
-        // now add new roles
-
-
-
-          // get group id. By this time, the group shall exist.
-          if(!groupId)
-            groupId = (await axios.get(kongaddr + groupEndpoint + "/" + groupInfo.group_name, headers)).data.id;
-          for(var role of groupInfo.roles){
-            try{
-              // get workspace that matches with the name in yaml groups.roles.workspace.
-                var wkId = null;
-                try{
-                  var wk = await axios.get(kongaddr + workspaceEndpoint  + "/" + role.workspace, headers);
-                  wkId = wk.data.id;
-                }catch{
-                  if(e.response.status == 404)
-                  {
-                    logError("workspsce " + role.workspace + " in group " + groupInfo.group_name + " not found." );
-                  }
-                  logError(e.stack);
-                  process.exit(1);
-                }
-
-
-                // var wk = workspaces.data.data.filter( f => f.name == role.workspace)[0];
-                // get role that matches with the name in yaml groups.roles.role.
-                var wkRoles = await axios.get(kongaddr  + "/" + role.workspace + rbacEndpoint + rolesEndpoint , headers);
-                var roleId = wkRoles.data.data.filter( r => r.name == role.role)[0].id;
-                // create role data
-                var roleData = { "workspace_id": wkId , "rbac_role_id" : roleId}
-                res = await axios.post( kongaddr + groupEndpoint + "/" + groupId + rolesEndpoint, roleData , headers);
-                logInfo (' Role created in group ' + groupInfo.group_name + " mapping workspace " + role.workspace + " and role " + role.role  );
-              }catch(e){
-                // Awareness. Group-roles post throws a 400 bad request instead of 409 conflict when records exists.
-                if(e.response.data.message)
-                {
-                  if (!e.response.data.message.includes("primary key violation on key"))
-                      logError(e.response.data.message);
-                  else {
-                    //Safe to ignore. Just that the role/worksapce combination exists
-                    //logError(e.response.data.message);
-                    }
-
-                }
-                else
-                  logError(e);
 
             }
-          }
+            else
+              logError(e);
+
+            }
+    }
 
 
- }
+  }
 }
 
 async function  getDirectories(path) {

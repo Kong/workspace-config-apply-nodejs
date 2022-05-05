@@ -10,7 +10,5 @@
 - name: demo1admin1
   email: demo1admin1@gmail12.com
   roles:
-  - superadmin
+  - superadmin2
   - admin
-
-  

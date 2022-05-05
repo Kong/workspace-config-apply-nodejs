@@ -1,0 +1,14 @@
+---
+- name: hap-uk-cto-010-dev-read
+  email: hap-uk-cto-010-devread@gmail12.com
+  roles:
+  - readonlyrole
+- name: hap-uk-cto-010-dev-read2
+  email: hap-uk-cto-010-devread2@gmail12.com
+  roles:
+  - admin
+- name: hap-uk-cto-010-dev-admin1
+  email: hap-uk-cto-010-devadmin1@gmail12.com
+  roles:
+  - superadmin2
+  - admin
