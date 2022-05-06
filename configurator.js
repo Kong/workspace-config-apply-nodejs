@@ -150,7 +150,7 @@ const commands = ['all','workspace','users','groups','wipe','validate-route'];
 
       // await long time as process will exit as part of checkRouteConflictOnline when either a conflict is found or all routes checked.
       // the lines below is only circuit breaker, should not be hit.
-      await new Promise(resolve => setTimeout(resolve, 50000));
+      await new Promise(resolve => setTimeout(resolve, 100000));
       logWarn("process exiting, not all routes checked.");
       process.exit(0);
     }
@@ -725,7 +725,8 @@ async function  logInfo  (logtext){
       });
 
       allDone.then(() => {
-        logInfo('All routes checked (' +  count + ' ), no conflict found!');
+        // logInfo('All routes checked (' +  count + ' ), no conflict found!');
+        logInfo('All routes checked. no conflict found!');
         process.stdout.write("retuncode:no-conflict");
         process.exit(0);
     });
