@@ -744,7 +744,9 @@ async function  logInfo  (logtext){
   // both sets are either empty or null. so match
   if((!Array.isArray(superset) || superset.length==0) && (!Array.isArray(subset) || subset.length==0)) 
     return true;
-  else
+  //one of them is empty or null . but not both
+  else if((!Array.isArray(superset) || superset.length==0) || (!Array.isArray(subset) || subset.length==0))
+    return false;
   // true if at least one element match (safer option), false if none matches
     return superset.some( p => subset.includes(p))
 }
