@@ -739,7 +739,7 @@ async function  logInfo  (logtext){
 
       allDone.then(() => {
         logInfo('All routes checked (' +  count + ' ), no conflict found!');
-        logInfo('All routes checked. no conflict found!');
+        // logInfo('All routes checked. no conflict found!');
         process.stdout.write("retuncode:no-conflict");
         process.exit(0);
     });
