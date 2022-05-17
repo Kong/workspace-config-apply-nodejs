@@ -681,8 +681,10 @@ async function  logInfo  (logtext){
       all.forEach(async(wk, i, a)=>{
         try{
           // logInfo("workspace name = " + wk.name)
-          if(wk.name!=workspaceNameToSkip){
-            var meta = await axios.get(kongaddr + workspaceEndpoint  + "/" + wk.name + metaEndpoint , headers);
+          if(wk.name != workspaceNameToSkip){
+            // logInfo("workspace Name " + wk.name);
+            let meta = await axios.get(kongaddr + workspaceEndpoint  + "/" + wk.name + metaEndpoint , headers);
+            logInfo('Total number of routes in: ' + wk.name + ' = ' +   meta.data.counts.routes );
             totalRoutes = totalRoutes + meta.data.counts.routes;
 
             // current workspace route check will be skipped, as that will allow devs to update current route. 
@@ -727,7 +729,7 @@ async function  logInfo  (logtext){
             process.stdout.write("0");
             process.exit(1);
           }
-          // await new Promise(resolve => setTimeout(resolve, 3000));
+          await new Promise(resolve => setTimeout(resolve, 7000));
           if (totalRoutes == count) {
 
             logInfo("Number of total workspaces: " + a.length + ". Number of total routes: " + totalRoutes);
