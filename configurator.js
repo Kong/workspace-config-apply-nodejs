@@ -444,15 +444,26 @@ async function applyGroups(configDir, path, kongaddr, headers, res, groupConf){
     let groupId;
     try{
       var groupData = { "name" : groupInfo.group_name, "comment": groupInfo.group_comment };
+      logInfo("Creating Group POST Endpoint: " + kongaddr + groupEndpoint);
       res = await axios.post(kongaddr + groupEndpoint, groupData, headers);
-      logInfo('Group ' + groupInfo.group_name + " created")
+      logInfo('Group ' + groupInfo.group_name + " created");
     }catch(e){
         if(e.response.status == 409){
           try{
             logInfo('Group ' + groupInfo.group_name + " already exists")
-            groupId  = (await axios.get(kongaddr + groupEndpoint + "/" + groupInfo.group_name, headers)).data.id;
+            // Workaround for groups endpoint issue
+            var groups = await axios.get(kongaddr + groupEndpoint , headers);
+            groupId = groups.data.data.filter( g => g.name == groupInfo.group_name)[0].id;
+            logInfo("Group ID " + groupId + " found for group name " + groupInfo.group_name);
+
+            //logInfo(kongaddr + groupEndpoint + "/" + groupInfo.group_name);
+            //groupId  = (await axios.get(kongaddr + groupEndpoint + "/" + groupInfo.group_name, headers)).data.id;
+
             // Check current roles from group
-            var groupRoles = await axios.get(kongaddr + groupEndpoint + "/" +  groupInfo.group_name +  rolesEndpoint , headers);
+            logInfo("Querying roles for group endpoint: " + kongaddr + groupEndpoint + "/" +  groupId +  rolesEndpoint);
+            // Workaround for groups endpoint issue
+            //var groupRoles = await axios.get(kongaddr + groupEndpoint + "/" +  groupInfo.group_name +  rolesEndpoint , headers);
+            var groupRoles = await axios.get(kongaddr + groupEndpoint + "/" +  groupId +  rolesEndpoint , headers);
             for(var role of groupRoles.data.data){
               logInfo("role " + role.rbac_role.name + " exists for workspace with id : " +  role.workspace.id );
             }
@@ -466,8 +477,13 @@ async function applyGroups(configDir, path, kongaddr, headers, res, groupConf){
     var workspaces = await axios.get(kongaddr + workspaceEndpoint , headers);
 
     // get group id. By this time, the group shall exist.
-    if(!groupId)
-      groupId = (await axios.get(kongaddr + groupEndpoint + "/" + groupInfo.group_name, headers)).data.id;
+    if(!groupId) {
+      // groupId = (await axios.get(kongaddr + groupEndpoint + "/" + groupInfo.group_name, headers)).data.id;
+      // Workaround for groups endpoint issue
+      var groups = await axios.get(kongaddr + groupEndpoint , headers);
+      groupId = groups.data.data.filter( g => g.name == groupInfo.group_name)[0].id;
+      logInfo(groupId);
+    }
 
     for(var role of groupInfo.roles){
         try{
@@ -570,69 +586,72 @@ async function  logInfo  (logtext){
 
   async function wipeWorkspace(featureForceWipeWorkspace, kongaddr, headers){
 
-    let wipeWorkspaceName = process.argv[3]?process.argv[3]:"default";
-    if(wipeWorkspaceName=="default"){
-      logError("please pass a non default workspace name");
-      process.exit(0);
-    }
-    let useForce = process.argv[4]?process.argv[4]=='true'?true:false:false;
-    if(!useForce){
-      logWarn("This will delete the workspace, if it's empty, barring dev portal files. This program will halt for some time to allow manual termination");
-      await new Promise(resolve => setTimeout(resolve, 5000));
-    }else{
-      if (!featureForceWipeWorkspace){
-        logError("FEATURE_FORCE_WIPE_WORKSPACE must be set to true for this to be allowed");
+      let wipeWorkspaceName = process.argv[3]?process.argv[3]:"default";
+      if(wipeWorkspaceName=="default"){
+        logError("please pass a non default workspace name");
         process.exit(0);
+      }
+      let useForce = process.argv[4]?process.argv[4]=='true'?true:false:false;
+      if(!useForce){
+        logWarn("This will delete the workspace, if it's empty, barring dev portal files. This program will halt for some time to allow manual termination");
+        await new Promise(resolve => setTimeout(resolve, 5000));
       }else{
-        logWarn("This will delete the workspace, even if it's not empty. Proceeding with extreme caution. This program will halt for some time to allow manual termination");
-        await new Promise(resolve => setTimeout(resolve, 8000));
-      }
-    }
-    // checking what's in the workspace
-    try{
-      var meta = await axios.get(kongaddr + workspaceEndpoint  + "/" + wipeWorkspaceName + metaEndpoint , headers);
-      let cancelWipe = false;
-
-      logWarn('current values : ---' + JSON.stringify(meta.data.counts));
-      for (const [key, value] of Object.entries(meta.data.counts)) {
-        if((key != 'files') && (value != 0)  && (!useForce)){
-          logError('entity ' + key + ' are not empty');
-          cancelWipe = true;
+        if (!featureForceWipeWorkspace){
+          logError("FEATURE_FORCE_WIPE_WORKSPACE must be set to true for this to be allowed");
+          process.exit(0);
+        }else{
+          logWarn("This will delete the workspace, even if it's not empty. Proceeding with extreme caution. This program will halt for some time to allow manual termination");
+          await new Promise(resolve => setTimeout(resolve, 8000));
         }
       }
-      if(cancelWipe){
-        logError( " Workspace " + wipeWorkspaceName + " can't be deleted as it's not empty");
-        process.exit(0);
-      }
+      // checking what's in the workspace
+      try{
+        var meta = await axios.get(kongaddr + workspaceEndpoint  + "/" + wipeWorkspaceName + metaEndpoint , headers);
+        let cancelWipe = false;
 
-      for (const [key, value] of Object.entries(meta.data.counts)) {
-        // start deleting entities now
-        if(value != 0){
-          let nextUrl = kongaddr   + "/" + wipeWorkspaceName + "/" + key.replace("_", "/");
-          while (nextUrl){
-            var entities = await axios.get(nextUrl , headers);
-
-            for(var e in entities.data.data){
-              await axios.delete(kongaddr   + "/" + wipeWorkspaceName + "/" + key.replace("_", "/") + "/" + entities.data.data[e].id , headers);
-              logWarn(key + " with id " +  entities.data.data[e].id + " deleted")
-            }
-            nextUrl=entities.data.next?kongaddr   + entities.data.next:null;
+        logWarn('current values : ---' + JSON.stringify(meta.data.counts));
+        for (const [key, value] of Object.entries(meta.data.counts)) {
+          if((key != 'files') && (value != 0)  && (!useForce)){
+            logError('entity ' + key + ' are not empty');
+            cancelWipe = true;
+          }
         }
-          logWarn("All " + key + " deleted");
+        if(cancelWipe){
+          logError( " Workspace " + wipeWorkspaceName + " can't be deleted as it's not empty");
+          process.exit(0);
         }
-      }
 
+        for (const [key, value] of Object.entries(meta.data.counts)) {
+          // start deleting entities now
+
+          if(value != 0){
+            let nextUrl = kongaddr   + "/" + wipeWorkspaceName + "/" + key.replace("_", "/");
+
+            while (nextUrl){
+              logInfo("NEXT-URL: " + nextUrl);
+              var entities = await axios.get(nextUrl , headers);
+              logInfo(key + " COUNT " + entities.data.data.length);
+              for(var e in entities.data.data){
+                await axios.delete(kongaddr   + "/" + wipeWorkspaceName + "/" + key.replace("_", "/") + "/" + entities.data.data[e].id , headers);
+                logWarn(key + " with id " +  entities.data.data[e].id + " deleted")
+              }
+              nextUrl=entities.data.next?kongaddr   + entities.data.next:null;
+          }
+            logWarn("All " + key + " deleted");
+          }
+        }
+        var metaEnd = await axios.get(kongaddr + workspaceEndpoint  + "/" + wipeWorkspaceName + metaEndpoint , headers);
+        logWarn('just before delete values : ---' + JSON.stringify(metaEnd.data.counts));
         logWarn("Workspace is empty now. Ready for deletion");
-        await axios.delete(kongaddr + workspaceEndpoint  + "/" + wipeWorkspaceName , headers);
-        logWarn("Workspace " + wipeWorkspaceName + " wiped" );
+          await axios.delete(kongaddr + workspaceEndpoint  + "/" + wipeWorkspaceName , headers);
+          logWarn("Workspace " + wipeWorkspaceName + " wiped" );
 
 
 
 
-    }catch(e){
-      logError("error wiping workspace. " + e );
+      }catch(e){
+        logError("error wiping workspace. " + e.stack );
+      }
+
+
     }
-
-
-
-  }
