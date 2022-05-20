@@ -440,6 +440,21 @@ async function applyGroups(configDir, path, kongaddr, headers, res, groupConf){
   logInfo( " Adding groups in manager. It's important that you have created the workspaces and associated roles already, otherwise this will not work");
   //var groupConf = yaml.load(fs.readFileSync(path.resolve(configDir,groupConfig), 'utf8'));
 
+  // Add /groups/* custom endpoint permissions for super-admin
+  try{
+    var group_permission = {"endpoint":"/groups/*","negative":false,"actions":"create,update,read,delete"};
+    logInfo("Adding groups/* superadmin role permission endpoint: " + kongaddr + rbacEndpoint + rolesEndpoint + '/super-admin' + permissionsEndpoint);
+    res = await axios.post(kongaddr + rbacEndpoint + rolesEndpoint + '/super-admin' + permissionsEndpoint, group_permission, headers);
+    logInfo("groups/* endpoint permission added for role super-admin in workspace default");
+  }catch(e){
+    if (e.response.status == 400) {
+      logInfo("groups/* endpoint permission exists for super-admin");
+    }else{
+      //ignore error and carry on
+      logInfo("Did not assign groups/* endpoint for super-admin");
+    }
+  }
+
   for(var groupInfo of groupConf){
     let groupId;
     try{
