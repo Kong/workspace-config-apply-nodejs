@@ -1,0 +1,28 @@
+    config:
+      portal: false
+    rbac:
+    - role: workspace-read-only
+      permissions:
+      - endpoint: "*"
+        negative: false
+        actions: "read"
+    - role: workspace-admin
+      permissions:
+      - endpoint: "*"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/rbac/*"
+        negative: true
+        actions: "create,update,read,delete"
+      - endpoint: "/rbac/*/*"
+        negative: true
+        actions: "create,update,read,delete"
+      - endpoint: "/rbac/*/*/*"
+        negative: true
+        actions: "create,update,read,delete"
+      - endpoint: "/rbac/*/*/*/*"
+        negative: true
+        actions: "create,update,read,delete"
+      - endpoint: "/rbac/*/*/*/*/*"
+        negative: true
+        actions: "create,update,read,delete"

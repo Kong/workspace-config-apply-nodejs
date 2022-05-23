@@ -1,10 +1,15 @@
-    config:
-      portal: false
     rbac:
-    - role: custom-read-only
+    - role: super-admin
       permissions:
       - endpoint: "*"
         negative: false
-        actions: "read"
-        workspace: "*"
-  
+        actions: "create,update,read,delete"
+      - endpoint: "/groups"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/groups/*"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/groups/*/roles"
+        negative: false
+        actions: "create,update,read,delete"

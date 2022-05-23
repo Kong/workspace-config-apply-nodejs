@@ -1,0 +1,14 @@
+---
+- name: abc-t0-test-015-dev-read
+  email: abc-t0-test-015-devread@gmail12.com
+  roles:
+  - readonlyrole
+- name: abc-t0-test-015-dev-read2
+  email: abc-t0-test-015-devread2@gmail12.com
+  roles:
+  - admin
+- name: abc-t0-test-015-dev-admin1
+  email: abc-t0-test-015-devadmin1@gmail12.com
+  roles:
+  - superadmin2
+  - admin

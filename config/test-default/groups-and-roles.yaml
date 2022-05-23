@@ -1,6 +1,6 @@
 ---
-- group_name: group-for-readonly-default
-  group_comment: readonly group
+- group_name: group-for-default-superadmin
+  group_comment: group-for-default-superadmin
   roles:
-  - workspace: test-default
-    role: custom-read-only
+  - workspace: default
+    role: super-admin

@@ -1,0 +1,13 @@
+---
+- name: abc-t0-test-029-dev-read
+  email: abc-t0-test-029-devread@gmail12.com
+  roles:
+  - workspace-read-only
+- name: abc-t0-test-029-dev-read2
+  email: abc-t0-test-029-devread2@gmail12.com
+  roles:
+  - workspace-read-only
+- name: abc-t0-test-029-dev-admin1
+  email: abc-t0-test-029-devadmin1@gmail12.com
+  roles:
+  - workspace-admin

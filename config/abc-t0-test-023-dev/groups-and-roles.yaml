@@ -1,0 +1,11 @@
+---
+- group_name: ekll019-2783-209e-aa92-54bae8d8bs990k
+  group_comment: readonly group (new object ID)
+  roles:
+  - workspace: abc-t0-test-023-dev
+    role: readonlyrole
+- group_name: ei3d2292-2783-209e-aa92-89dkd2lsmtest1
+  group_comment: Admin group (object ID)
+  roles:
+  - workspace: abc-t0-test-023-dev
+    role: admin
