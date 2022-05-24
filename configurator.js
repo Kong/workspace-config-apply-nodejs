@@ -146,12 +146,16 @@ const commands = ['all','workspace','users','groups','wipe','validate-route'];
     
     if(command==5){
       var allRoutesChecked = false;
-      checkRouteConflictOnline( kongaddr, headers, allRoutesChecked);
+      var count=0;
+      var pageSize=process.env.ROUTE_CHECK_PAGESIZE?process.env.ROUTE_CHECK_PAGESIZE:900;
+    
+
+      checkRouteConflictOnline( kongaddr, headers, count);
 
       // await long time as process will exit as part of checkRouteConflictOnline when either a conflict is found or all routes checked.
       // the lines below is only circuit breaker, should not be hit.
-      await new Promise(resolve => setTimeout(resolve, 100000));
-      logWarn("process exiting, not all routes checked.");
+      await new Promise(resolve => setTimeout(resolve, 1200000));
+      logWarn("process exiting, not all routes checked. Routes checked : " + count);
       process.exit(0);
     }
 
@@ -652,11 +656,11 @@ async function  logInfo  (logtext){
 
   }
 
-  async function checkRouteConflictOnline(kongaddr,headers)
+  async function checkRouteConflictOnline(kongaddr,headers, count, pageSize)
   {
     try{
       logInfo( "this will check all existing routes acorss all workspaces and compare them with inso config to ensure that will not be any conflicting route.");
-      var count = 0;
+      //var count = 0;
       if(!process.argv[3]){
         logError("Kong Conf file path not supplied");
         process.exit(1);
@@ -676,9 +680,9 @@ async function  logInfo  (logtext){
       var totalRoutes=0;
       logInfo("workspace Name To Skip = " + workspaceNameToSkip);
       var all =  (await axios.get(kongaddr + workspaceEndpoint , headers)).data.data;
-      // for(var wk of all){
-      var allDone = new Promise((resolve, reject) => {
-      all.forEach(async(wk, i, a)=>{
+      for(var wk of all){
+      // var allDone = new Promise((resolve, reject) => {
+      // all.forEach(async(wk, i, a)=>{
         try{
           // logInfo("workspace name = " + wk.name)
           if(wk.name != workspaceNameToSkip){
@@ -689,13 +693,14 @@ async function  logInfo  (logtext){
 
             // current workspace route check will be skipped, as that will allow devs to update current route. 
             //Deck Sync will take care of the update.
-            let nextUrl = kongaddr + "/" + wk.name +  routeEndpoint + "?size=800";
+            let nextUrl = kongaddr + "/" + wk.name +  routeEndpoint + "?size=" + pageSize;
             // logInfo(nextUrl);
             while(nextUrl){
+              // logInfo("just before call to " + nextUrl);
               var routes = (await axios.get(nextUrl, headers)).data;
-              
-              routes.data.forEach(async(r,index,array)=>{
-                // routes.data.forEach((r)=>{
+              // logInfo("routes count for url: " + nextUrl + " : " + routes.data.length );
+              // routes.data.forEach(async(r,index,array)=>{
+                routes.data.forEach((r)=>{
                 // conf.services[0].routes.forEach( async(cr) => {
                 conf.services[0].routes.forEach( (cr) => {
               
@@ -716,11 +721,13 @@ async function  logInfo  (logtext){
                   
                 })
                 // logInfo("route number checked " + ++count);
-                ++count;
+                // logInfo('count ' + ++count);
+                ++count
 
               });
-              nextUrl=routes.next?kongaddr +  "/" + wk.name + routes.next  + "&size=800":null;
               // logInfo(nextUrl);
+              nextUrl=routes.next?kongaddr +  "/" + wk.name + routes.next  + "&size=" + pageSize:null;
+              
             }
           }
           
@@ -729,22 +736,26 @@ async function  logInfo  (logtext){
             process.stdout.write("0");
             process.exit(1);
           }
-          await new Promise(resolve => setTimeout(resolve, 7000));
-          if (totalRoutes == count) {
+          // await new Promise(resolve => setTimeout(resolve, 7000));
+          // if (totalRoutes == count) {
 
-            logInfo("Number of total workspaces: " + a.length + ". Number of total routes: " + totalRoutes);
+          //   logInfo("Number of total workspaces: " + a.length + ". Number of total routes: " + totalRoutes);
             
-            resolve();
-          }
-         });
-      });
+          //   resolve();
+          // }
+ 
+ 
+ 
+   }
+  // });
+  //     });
 
-      allDone.then(() => {
+      // allDone.then(() => {
         logInfo('All routes checked (' +  count + ' ), no conflict found!');
         // logInfo('All routes checked. no conflict found!');
         process.stdout.write("retuncode:no-conflict");
         process.exit(0);
-    });
+    // });
   }catch(e){
     logError(e.stack);
     process.stdout.write("0");
