@@ -150,7 +150,7 @@ const commands = ['all','workspace','users','groups','wipe','validate-route'];
       var pageSize=process.env.ROUTE_CHECK_PAGESIZE?process.env.ROUTE_CHECK_PAGESIZE:900;
     
 
-      checkRouteConflictOnline( kongaddr, headers, count);
+      checkRouteConflictOnline( kongaddr, headers, count, pageSize);
 
       // await long time as process will exit as part of checkRouteConflictOnline when either a conflict is found or all routes checked.
       // the lines below is only circuit breaker, should not be hit.
