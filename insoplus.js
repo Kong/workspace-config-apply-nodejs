@@ -49,8 +49,7 @@ try
 
  
 
-//console.log(yaml.dump(conf));
-// console.log(path.resolve("./", 'insoplus_' +spec));
+
 var fileName = path.resolve(path.dirname(specPath),'altered_' +path.basename(specPath));
 fs.writeFileSync(fileName, yaml.dump(conf));
 console.log("new config file is written in " + fileName );
@@ -70,17 +69,21 @@ function removeUpstream(conf)
         process.exit(1);
     }
 
+    
+
     if(conf.upstreams[0].targets.length==0){
         console.log( "No target present in top upstream")
         process.exit(1);
     }
+
+    
 
     var firstTarget = conf.upstreams[0].targets[0].target;
     console.log("first target " + firstTarget);
     //take out port if any
     conf.services[0].host = firstTarget.split(":")[0];
     delete conf.upstreams;
-
+    console.log("upstreams removed");
 
  
 }
@@ -150,7 +153,8 @@ function addRouteHost(conf){
 
 
 
-console.log("program exiting now."); process.exit(1);
+console.log("program exiting now."); 
+process.exit(0);
 
     
 
