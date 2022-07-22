@@ -49,10 +49,10 @@ try
 
  
 
-
-var fileName = path.resolve(path.dirname(specPath),'altered_' +path.basename(specPath));
-fs.writeFileSync(fileName, yaml.dump(conf));
-console.log("new config file is written in " + fileName );
+//Request from WSIT to update same fileName,
+// var fileName = path.resolve(path.dirname(specPath),'altered_' +path.basename(specPath));
+fs.writeFileSync(specPath, yaml.dump(conf));
+console.log("new config file is written in " + specPath );
 
 
 function removeUpstream(conf)
