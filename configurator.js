@@ -622,21 +622,22 @@ async function  logInfo  (logtext){
 
       for (const [key, value] of Object.entries(meta.data.counts)) {
         // start deleting entities now
-      
         if(value != 0){
-          let nextUrl = kongaddr   + "/" + wipeWorkspaceName + "/" + key.replace("_", "/");
+          var set = key;
+          if(set=="basicauth_credentials") set = "basic-auths";
+          let nextUrl = kongaddr   + "/" + wipeWorkspaceName + "/" + set.replace("_", "/");
           
           while (nextUrl){
             logInfo("NEXT-URL: " + nextUrl);
             var entities = await axios.get(nextUrl , headers);
-            logInfo(key + " COUNT " + entities.data.data.length);
+            logInfo(set + " COUNT " + entities.data.data.length);
             for(var e in entities.data.data){
-              await axios.delete(kongaddr   + "/" + wipeWorkspaceName + "/" + key.replace("_", "/") + "/" + entities.data.data[e].id , headers);
-              logWarn(key + " with id " +  entities.data.data[e].id + " deleted")
+              await axios.delete(kongaddr   + "/" + wipeWorkspaceName + "/" + set.replace("_", "/") + "/" + entities.data.data[e].id , headers);
+              logWarn(set + " with id " +  entities.data.data[e].id + " deleted")
             }
             nextUrl=entities.data.next?kongaddr   + entities.data.next:null;
         }
-          logWarn("All " + key + " deleted");
+          logWarn("All " + set + " deleted");
         }
       }
       var metaEnd = await axios.get(kongaddr + workspaceEndpoint  + "/" + wipeWorkspaceName + metaEndpoint , headers);
