@@ -603,57 +603,65 @@ async function  logInfo  (logtext){
         await new Promise(resolve => setTimeout(resolve, 8000));
       }
     }
-    // checking what's in the workspace
-    try{
-      var meta = await axios.get(kongaddr + workspaceEndpoint  + "/" + wipeWorkspaceName + metaEndpoint , headers);
-      let cancelWipe = false;
-
-      logWarn('current values : ---' + JSON.stringify(meta.data.counts));
-      for (const [key, value] of Object.entries(meta.data.counts)) {
-        if((key != 'files') && (value != 0)  && (!useForce)){
-          logError('entity ' + key + ' are not empty');
-          cancelWipe = true;
+    var nothingDeleted = false;
+    //if something was successfully deleted in the last loop, loop again and continue the deletion process
+    //if nothing was deleted during a run, we give up all hope and halt the program
+    while (nothingDeleted == false) {
+      nothingDeleted = true;
+      try{
+        // checking what's in the workspace
+        var meta = await axios.get(kongaddr + workspaceEndpoint  + "/" + wipeWorkspaceName + metaEndpoint , headers);
+        let cancelWipe = false;
+  
+        logWarn('current values : ---' + JSON.stringify(meta.data.counts));
+        for (const [key, value] of Object.entries(meta.data.counts)) {
+          if((key != 'files') && (value != 0)  && (!useForce)){
+            logError('entity ' + key + ' are not empty');
+            cancelWipe = true;
+          }
         }
-      }
-      if(cancelWipe){
-        logError( " Workspace " + wipeWorkspaceName + " can't be deleted as it's not empty");
-        process.exit(0);
-      }
-
-      for (const [key, value] of Object.entries(meta.data.counts)) {
-        // start deleting entities now
-      
-        if(value != 0){
-          let nextUrl = kongaddr   + "/" + wipeWorkspaceName + "/" + key.replace("_", "/");
-          
-          while (nextUrl){
-            logInfo("NEXT-URL: " + nextUrl);
-            var entities = await axios.get(nextUrl , headers);
-            logInfo(key + " COUNT " + entities.data.data.length);
-            for(var e in entities.data.data){
-              await axios.delete(kongaddr   + "/" + wipeWorkspaceName + "/" + key.replace("_", "/") + "/" + entities.data.data[e].id , headers);
-              logWarn(key + " with id " +  entities.data.data[e].id + " deleted")
-            }
-            nextUrl=entities.data.next?kongaddr   + entities.data.next:null;
+        if(cancelWipe){
+          logError( " Workspace " + wipeWorkspaceName + " can't be deleted as it's not empty");
+          process.exit(0);
         }
-          logWarn("All " + key + " deleted");
+  
+        for (const [key, value] of Object.entries(meta.data.counts)) {
+          // start deleting entities now
+          if(value != 0){
+            var set = key;
+            if(set=="basicauth_credentials") set = "basic-auths";
+            let nextUrl = kongaddr   + "/" + wipeWorkspaceName + "/" + set.replace("_", "/");
+            
+            while (nextUrl){
+              logInfo("NEXT-URL: " + nextUrl);
+              var entities = await axios.get(nextUrl , headers);
+              logInfo(set + " COUNT " + entities.data.data.length);
+              for(var e in entities.data.data){
+                logInfo("trying to delete " + set + " with id " +  entities.data.data[e].id)
+                try {
+                  await axios.delete(kongaddr   + "/" + wipeWorkspaceName + "/" + set.replace("_", "/") + "/" + entities.data.data[e].id , headers);
+                  logWarn(set + " with id " +  entities.data.data[e].id + " deleted")
+                  nothingDeleted = false;
+                } catch(error) {
+                  logError(set + " with id " +  entities.data.data[e].id + " not deleted")
+                }
+              }
+              nextUrl=entities.data.next?kongaddr   + entities.data.next:null;
+          }
+            logWarn("All " + set + " deleted");
+          }
         }
-      }
-      var metaEnd = await axios.get(kongaddr + workspaceEndpoint  + "/" + wipeWorkspaceName + metaEndpoint , headers);
-      logWarn('just before delete values : ---' + JSON.stringify(metaEnd.data.counts));
-      logWarn("Workspace is empty now. Ready for deletion");
+        var metaEnd = await axios.get(kongaddr + workspaceEndpoint  + "/" + wipeWorkspaceName + metaEndpoint , headers);
+        logWarn('just before delete values : ---' + JSON.stringify(metaEnd.data.counts));
+        logWarn("Workspace is empty now. Ready for deletion");
         await axios.delete(kongaddr + workspaceEndpoint  + "/" + wipeWorkspaceName , headers);
         logWarn("Workspace " + wipeWorkspaceName + " wiped" );
-        
-      
-
-
-    }catch(e){
-      logError("error wiping workspace. " + e.stack );
+        //if we reached this point, the workspace was removed completely, and we can escape the while loop
+        break;
+      }catch(e){
+        logError("error wiping workspace. " + e.stack );
+      }
     }
-
-
-
   }
 
   async function checkRouteConflictOnline(kongaddr,headers, count, pageSize)
