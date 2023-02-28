@@ -1,0 +1,17 @@
+---
+- name: demo2rbacread
+  token: demo2rbacreadtoken
+  roles:
+  - readonlyrole
+- name: demo2rbacread2
+  token: demo2rbacread2token
+  roles:
+  - admin
+- name: demo2rbacadmin1
+  token: demo2rbacadmin1token
+  roles:
+  - superadmin2
+- name: demo2rbacadmin2regular
+  token: demo2rbacadmin2regulartoken
+  roles:
+  - admin

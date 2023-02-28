@@ -7,10 +7,10 @@
   email: demo1read2@gmail12.com
   roles:
   - admin
-- name: demo1admin1
-  email: demo1admin1@gmail12.com
+- name: demo1admin3
+  email: demo1admin3@gmail12.com
   roles:
-  - superadmin
+  - superadmin2
   - admin
 
   

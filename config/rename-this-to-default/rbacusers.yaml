@@ -1,0 +1,5 @@
+---
+- name: custom-read
+  token: customread1token
+  roles:
+  - custom-read-only

@@ -1,0 +1,11 @@
+---
+- name: demo1rbac
+  token: demo1rbactoken
+  roles:
+  - readonlyrole
+- name: demo1rbac2
+  token: demo1rbac2token
+  roles:
+  - admin
+
+  

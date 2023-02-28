@@ -1,0 +1,17 @@
+---
+- name: demo3rbacread11
+  token: demo3rbacread11token
+  roles:
+  - readonlyrole
+- name: demo3rbacread22
+  token: demo3rbacread22token
+  roles:
+  - admin
+- name: demo3rbacadmin11
+  token: demo3rbacadmin11token
+  roles:
+  - superadmin2
+- name: demo3rbacadmin22regular
+  token: demo3rbacadmin22regulartoken
+  roles:
+  - admin

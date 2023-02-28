@@ -20,6 +20,7 @@ const authEndpoint = "/auth"
 const workSpaceConfigName = "workspace.yaml";
 const pluginConfigName = "plugins.yaml";
 const userNameConfigName = "users.yaml";
+const rbacUserNameConfigName = "rbacusers.yaml";
 const rootWorkSpaceConfig = "root-workspace.yaml";
 const groupConfig = "groups-and-roles.yaml"
 const cookier_header_name = "admin_session"
@@ -174,6 +175,7 @@ const commands = ['all','workspace','users','groups'];
         logInfo(' Workspace config for workspace ' + dirs[dir] + ' has been set to ' + workSpaceFilePath );
         var workSpaceConfig = yaml.load(fs.readFileSync( workSpaceFilePath), 'utf8');
         var userNameConfig = yaml.load(fs.readFileSync(path.resolve(configDir,dirs[dir],userNameConfigName), 'utf8'));
+        var rbacUserNameConfig = yaml.load(fs.readFileSync(path.resolve(configDir,dirs[dir],rbacUserNameConfigName), 'utf8'));
         
         var workspacedata = {'name': dirs[dir],'config': workSpaceConfig.config}
         var res = '';
@@ -190,8 +192,8 @@ const commands = ['all','workspace','users','groups'];
                 res= await applyPlugins(res, kongaddr,workspacedata.name,workSpaceConfig.plugins,headers, false );
               }
               if(command == 0 || command == 2) // users
-               res = await applyUsers(res,kongaddr,workspacedata.name,headers,userNameConfig,false, delete_existing_users )
-                
+               res = await applyUsers(res,kongaddr,workspacedata.name,headers,userNameConfig,false, delete_existing_users );
+               res = await applyRBACUsers(res,kongaddr,workspacedata.name,headers,rbacUserNameConfig,false, delete_existing_users ); 
             }
     
           } catch (e) {
@@ -209,7 +211,8 @@ const commands = ['all','workspace','users','groups'];
                    logError(e);
                 }
               if(command == 0 || command == 2) // users
-                res = await applyUsers(res,kongaddr,workspacedata.name,headers,userNameConfig, true,delete_existing_users )
+                res = await applyUsers(res,kongaddr,workspacedata.name,headers,userNameConfig, true,delete_existing_users );
+                res = await applyRBACUsers(res,kongaddr,workspacedata.name,headers,rbacUserNameConfig,false, delete_existing_users ); 
               }
             } else {
               logError(e.stack);
@@ -396,6 +399,84 @@ async function applyUsers(res, kongaddr, workspacename,  headers, users, isnew, 
         for (var admin of adminsNotInList) {
           res = await axios.delete(kongaddr + '/' + workspacename + adminEndpoint + '/' + admin , headers);
           logWarn(' User ' + admin + ' does not exist in users.yaml so is being deleted in workspace ' + workspacename)
+        }
+      }catch(e){
+        logError(' Deletetion of old roles failed. ' + e )
+      }
+    }
+  
+  return res;
+}
+
+async function applyRBACUsers(res, kongaddr, workspacename,  headers, rbacUsers, isnew, delete_existing_users) {
+  //logWarn('DO NOT USE THIS IF YOUR KONG INSTANCE IS OIDC ENABLED. WAITING 7 seconds for admin user to stope the execution...');
+  //wait new Promise(resolve => setTimeout(resolve, 7000));
+  logInfo('starting to add users in the workspace ' + workspacename)
+  for (var rbacUser of rbacUsers) {
+    var userdata = {"name": rbacUser.name, "user_token" : rbacUser.token, "enabled": true};
+   
+    try {
+      res = await axios.get(kongaddr + '/' + workspacename + rbacEndpoint + userEndpoint + '/' + rbacUser.name, headers);
+      if (res.status == 200) {//user exists
+        logWarn(' User ' + rbacUser.name + ' exists in ' +  workspacename)
+        res = await axios.patch(kongaddr + '/' + workspacename + rbacEndpoint + userEndpoint + '/' + rbacUser.name, rbacUser, headers);
+        logInfo(' For user ' + rbacUser.name + ' config reapplied in ' + workspacename);
+ 
+      }
+    } catch (e) {
+      if (e.response.status == 404) {
+        // add new user
+        try{
+          res = await axios.post(kongaddr + '/' + workspacename + rbacEndpoint + userEndpoint , userdata, headers);
+        }catch(e){
+          if(e.response.status == 409){
+            logWarn(' User ' + rbacUser.name + ' exists in another workspace' )
+          }else{ logError(e);}
+        }
+        logInfo(' User ' + rbacUser.name + ' added in ' + workspacename);
+      } else {
+        logError(e.stack);
+      }
+    }
+    
+      // add new roles
+      for (var role of rbacUser.roles) {
+        try{
+          res = await axios.post(kongaddr + '/' + workspacename + rbacEndpoint + userEndpoint + '/' + rbacUser.name + rolesEndpoint, {"roles" : role}, headers);
+          logInfo(' Role ' + role + ' added for user ' + rbacUser.name  + ' in ' + workspacename);
+          
+        }catch(e){
+          if(e.response.data.code == 3) { //role exists
+            logWarn(' Role ' + role + ' already present for user ' + rbacUser.name + ' in ' + workspacename);
+          }else if(e.response.data.message)
+            logError(e.response.data.message);
+          else{ logError(e);}
+        }
+      }
+
+
+
+    
+  }
+    if(delete_existing_users){
+      //in the end remove users not on the config
+      //all admins in the workspace
+      try
+      {
+        if (workspacename == "default"){
+          logError("Kong strongly recommends not to delete existing users in 'default' using this tool. Please use admin API or manager UI to delete users if needed in default workspace");
+          process.exit(2);
+        }
+        logWarn('FEATURE_DELETE_EXISTING_USERS is set to true, so checking for users that are in manager but not in users list. Set this to false if you do not want it to happen.');
+        var currentAdminUsers = await axios.get(kongaddr + '/' + workspacename + rbacEndpoint + userEndpoint , headers)
+        var currentAdmins= currentAdminUsers.data.data.map(m => m.username);
+        //check if any not in list
+        var userNames = users.map(m => m.name);
+        var adminsNotInList = currentAdmins.filter(u =>! userNames.includes(u));
+
+        for (var admin of adminsNotInList) {
+          res = await axios.delete(kongaddr + '/' + workspacename + rbacEndpoint + userEndpoint + '/' + admin , headers);
+          logWarn(' User ' + admin + ' does not exist in rabcusers.yaml so is being deleted in workspace ' + workspacename)
         }
       }catch(e){
         logError(' Deletetion of old roles failed. ' + e )
