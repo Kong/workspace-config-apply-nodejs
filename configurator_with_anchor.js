@@ -20,8 +20,10 @@ const workSpaceConfigName = "workspace.yaml";
 const pluginConfigName = "plugins.yaml";
 const userNameConfigName = "users.yaml";
 const rootWorkSpaceConfig = "root-workspace.yaml";
-const groupConfig = "groups-and-roles-old.yaml";
+const groupConfig = "groups-and-roles.yaml";
 const cookier_header_name = "admin_session";
+const max_size_for_group_list = "300"
+const max_size_for_workspace_list = "300"
 const log_lib = require(process.env.LOG_LIB
   ? process.env.LOG_LIB
   : "node-color-log");
@@ -648,13 +650,18 @@ async function applyGroups(configDir, path, kongaddr, headers, res) {
   );
 
   // get all group names and Ids first
-  var allGroups = (await axios.get(kongaddr + groupEndpoint , headers)).data.data;
+  var allGroups = (await axios.get(kongaddr + groupEndpoint + "?size=" + max_size_for_group_list , headers)).data.data;
   if(allGroups)
-    logInfo( "Existing groups = " + allGroups.length);
+    logInfo( "Number of existing groups = " + allGroups.length);
+  
+  // temp debugging
+  for(var g in allGroups){
+    logWarn("group name = " + allGroups[g].name);
+  }
   // get all workspace names and Ids first
-  var allwks = (await axios.get(kongaddr + workspaceEndpoint , headers)).data.data;
+  var allwks = (await axios.get(kongaddr + workspaceEndpoint +  "?size=" + max_size_for_workspace_list , headers)).data.data;
   if(allwks)
-    logInfo( "Existing workspaces = " + allwks.length);
+    logInfo( "Number of existing workspaces = " + allwks.length);
 
   var groupConf = yaml.load(
     fs.readFileSync(path.resolve(configDir, groupConfig), "utf8")
@@ -669,11 +676,15 @@ async function applyGroups(configDir, path, kongaddr, headers, res) {
       };
 
       // check if group name is in group list
+      logInfo("Group Name to search " + groupData.name);
       var grp = allGroups.find(g=> g.name == groupData.name);
+      
       if (grp){
         groupId = grp.id;
+
         logWarn("Group " + groupInfo.group_name + " already exists");
       } else{
+          logWarn("group does not exist.. creating now " + groupData.name);
           res = await axios.post(kongaddr + groupEndpoint, groupData, headers);
           logInfo("Group " + groupInfo.group_name + " created");
     } }
@@ -682,13 +693,11 @@ async function applyGroups(configDir, path, kongaddr, headers, res) {
         logError("Group " + groupInfo.group_name + " already exists. Possible duplication in group config. Process exiting..");
       } else {
         logError(e);
-       }5
+       }
        process.exit(1);
     }
     // now add new roles
-5
-    // get all workspaces
-    // var workspaces = await axios.get(kongaddr + workspaceEndpoint , headers);
+
     // get group id. By this time, the group shall exist.
     if (!groupId)
       groupId = (
@@ -705,41 +714,19 @@ async function applyGroups(configDir, path, kongaddr, headers, res) {
         var wk = allwks.find(w=> w.name == role.workspace);
         if(wk){
           wkId = wk.id;
-          //temp debug messages
-          logInfo( 'In group ' + groupInfo.group_name + ' Workspace Id captured: ' + wkId);
         }else{
-          logError("workspsce " + role.workspace + " in group " + groupInfo.group_name + " not found.");
+          logError("workspsce " + role.workspace + " not found. Please verify config. Processing exiting. Checking for group " + groupInfo.group_name );
           process.exit(1);
         }
 
-        // try {
-        //   var wk = await axios.get(
-        //     kongaddr + workspaceEndpoint + "/" + role.workspace,
-        //     headers
-        //   );
-        //   wkId = wk.data.id;
-        //   //temp debug messages
-        //   logInfo( 'In group ' + groupInfo.group_name + ' Workspace Id captured: ' + wkId);
-        // } catch (e) {
-        //   if (e.response.status == 404) {
-        //     logError(
-        //       "workspsce " +
-        //         role.workspace +
-        //         " in group " +
-        //         groupInfo.group_name +
-        //         " not found."
-        //     );
-        //     process.exit(1);
-        //   }
-        // }
+
         // get role that matches with the name in yaml groups.roles.role.
         var wkRoles = await axios.get(
           kongaddr + "/" + role.workspace + rbacEndpoint + rolesEndpoint,
           headers
         );
         var roleId = wkRoles.data.data.filter((r) => r.name == role.role)[0].id;
-        //temp debug messages
-        logInfo( 'In group ' + groupInfo.group_name + ' Role Id captured: ' + roleId);
+     
         // create role data
         var roleData = { workspace_id: wkId, rbac_role_id: roleId };
         res = await axios.post(
@@ -762,7 +749,7 @@ async function applyGroups(configDir, path, kongaddr, headers, res) {
             logError(e.response.data.message);
           else {
             //Safe to ignore. Just that the role/worksapce combination exists
-            logWarn('In group ' + groupInfo.group_name + ', the following role/workspace combination exists. This is not an error. ' + e.response.data.message);
+            logWarn('In group ' + groupInfo.group_name + ', the following role/workspace combination exists. ');
           }
         } else logError(e);
       }
