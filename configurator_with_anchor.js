@@ -182,6 +182,15 @@ const commands = ["all", "workspace", "users", "groups", "wipe"];
     // none of the below is needed if it's workspace wipe
     if (command == 4) {
       await wipeWorkspace(featureForceWipeWorkspace, kongaddr, headers);
+      await logOut();
+      process.exit(0);
+    }
+
+        // Add groups. These are cross workspaces and roles.
+    if (command == 3) {
+      //applyGroups(configDir, path, kongaddr, headers, res);
+      res = await applyGroups(configDir, path, kongaddr, headers, res, selectedWorkspace);
+      await logOut();
       process.exit(0);
     }
 
@@ -308,31 +317,9 @@ const commands = ["all", "workspace", "users", "groups", "wipe"];
       }
     }
 
-    // Add groups. These are cross workspaces and roles.
-    if (command == 3) {
-      //applyGroups(configDir, path, kongaddr, headers, res);
-      res = await applyGroups(configDir, path, kongaddr, headers, res);
-    }
 
-    // log out
-    if (process.env.AUTH_METHOD == "PASSWORD") {
-      // get auth cookie
-      logInfo("Calling auth endpoint to logout in 5 seconds...");
-      try {
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-        var logOut = await axios.delete(
-          kongaddr + authEndpoint + "?session_logout=true",
-          headers
-        );
-        logInfo(" Logout complete. System exiting..");
-      } catch (e) {
-        logError(
-          "Logout failed. It's likely that user wasn't fully logged in at this point" +
-            e
-        );
-        process.exit(1);
-      }
-    }
+
+  logOut();
   } catch (e) {
     logError(e.stack);
   }
@@ -644,7 +631,7 @@ async function applyUsers(
   return res;
 }
 
-async function applyGroups(configDir, path, kongaddr, headers, res) {
+async function applyGroups(configDir, path, kongaddr, headers, res, selectedWorkspace) {
   logInfo(
     " Adding groups in manager. It's important that you have created the workspaces and associated roles already, otherwise this will not work"
   );
@@ -654,10 +641,10 @@ async function applyGroups(configDir, path, kongaddr, headers, res) {
   if(allGroups)
     logInfo( "Number of existing groups = " + allGroups.length);
   
-  // temp debugging
-  for(var g in allGroups){
-    logWarn("group name = " + allGroups[g].name);
-  }
+  // // temp debugging
+  // for(var g in allGroups){
+  //   logWarn("group name = " + allGroups[g].name);
+  // }
   // get all workspace names and Ids first
   var allwks = (await axios.get(kongaddr + workspaceEndpoint +  "?size=" + max_size_for_workspace_list , headers)).data.data;
   if(allwks)
@@ -666,8 +653,20 @@ async function applyGroups(configDir, path, kongaddr, headers, res) {
   var groupConf = yaml.load(
     fs.readFileSync(path.resolve(configDir, groupConfig), "utf8")
   );
-
-  for (var groupInfo of groupConf.config) {
+  var allGroupConf;
+  if(selectedWorkspace != "all"){
+    logWarn( "will only create groups and apply roles for workspace " + selectedWorkspace);
+    allGroupConf = groupConf.config.filter(f=> f.roles.find( r=>  (r.workspace===selectedWorkspace)));
+    if(!allGroupConf){
+      logError("No group matches with workspace name " + selectedWorkspace + " . Process exiting");
+      process.exit(1);
+    }
+    logWarn( allGroupConf.length + " groups found that matches " + selectedWorkspace );
+  } else{
+      allGroupConf = groupConf.config;
+  }
+  
+  for (var groupInfo of allGroupConf) {
     let groupId;
     try {
       var groupData = {
@@ -957,4 +956,25 @@ async function wipeWorkspace(featureForceWipeWorkspace, kongaddr, headers) {
       logError("error wiping workspace. " + e.stack);
     }
   }
+}
+
+async function  logOut(){   // log out
+if (process.env.AUTH_METHOD == "PASSWORD") {
+  // get auth cookie
+  logInfo("Calling auth endpoint to logout in 5 seconds...");
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    var logOut = await axios.delete(
+      kongaddr + authEndpoint + "?session_logout=true",
+      headers
+    );
+    logInfo(" Logout complete. System exiting..");
+  } catch (e) {
+    logError(
+      "Logout failed. It's likely that user wasn't fully logged in at this point" +
+        e
+    );
+    process.exit(1);
+  }
+}
 }
