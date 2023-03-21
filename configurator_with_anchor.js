@@ -182,7 +182,7 @@ const commands = ["all", "workspace", "users", "groups", "wipe"];
     // none of the below is needed if it's workspace wipe
     if (command == 4) {
       await wipeWorkspace(featureForceWipeWorkspace, kongaddr, headers);
-      await logOut();
+      await logOut(kongaddr,headers);
       process.exit(0);
     }
 
@@ -190,7 +190,7 @@ const commands = ["all", "workspace", "users", "groups", "wipe"];
     if (command == 3) {
       //applyGroups(configDir, path, kongaddr, headers, res);
       res = await applyGroups(configDir, path, kongaddr, headers, res, selectedWorkspace);
-      await logOut();
+      await logOut(kongaddr,headers);
       process.exit(0);
     }
 
@@ -319,7 +319,7 @@ const commands = ["all", "workspace", "users", "groups", "wipe"];
 
 
 
-  logOut();
+  await logOut(kongaddr,headers);
   } catch (e) {
     logError(e.stack);
   }
@@ -958,7 +958,7 @@ async function wipeWorkspace(featureForceWipeWorkspace, kongaddr, headers) {
   }
 }
 
-async function  logOut(){   // log out
+async function  logOut(kongaddr, headers){   // log out
 if (process.env.AUTH_METHOD == "PASSWORD") {
   // get auth cookie
   logInfo("Calling auth endpoint to logout in 5 seconds...");
