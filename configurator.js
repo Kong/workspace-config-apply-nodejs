@@ -419,9 +419,6 @@ async function applyRBACUsers(res, kongaddr, workspacename,  headers, rbacUsers,
       res = await axios.get(kongaddr + '/' + workspacename + rbacEndpoint + userEndpoint + '/' + rbacUser.name, headers);
       if (res.status == 200) {//user exists
         logWarn(' User ' + rbacUser.name + ' exists in ' +  workspacename)
-        res = await axios.patch(kongaddr + '/' + workspacename + rbacEndpoint + userEndpoint + '/' + rbacUser.name, rbacUser, headers);
-        logInfo(' For user ' + rbacUser.name + ' config reapplied in ' + workspacename);
- 
       }
     } catch (e) {
       if (e.response.status == 404) {
