@@ -433,6 +433,7 @@ async function applyRBACUsers(res, kongaddr, workspacename,  headers, rbacUsers,
         logInfo(' User ' + rbacUser.name + ' added in ' + workspacename);
       } else {
         logError(e.stack);
+        process.exit(0);
       }
     }
     
