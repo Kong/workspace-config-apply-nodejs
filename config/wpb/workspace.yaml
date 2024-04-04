@@ -1,0 +1,125 @@
+    config:
+      portal: false
+    rbac:
+    - role: readonlyrole
+      permissions:
+      - endpoint: "*"
+        negative: false
+        actions: "read"
+    - role: admin
+      permissions:
+      - endpoint: "*"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/rbac/*"
+        negative: true 
+        actions: "create,update,read,delete"
+      - endpoint: "/rbac/*/*"
+        negative: true 
+        actions: "create,update,read,delete"
+      - endpoint: "/rbac/*/*/*"
+        negative: true 
+        actions: "create,update,read,delete"
+      - endpoint: "/rbac/*/*/*/*"
+        negative: true 
+        actions: "create,update,read,delete"
+      - endpoint: "/rbac/*/*/*/*/*"
+        negative: true 
+        actions: "create,update,read,delete"
+    - role: superadmin2
+      permissions:
+      - endpoint: "*"
+        negative: false
+        actions: "create,update,delete"
+      - endpoint: "/admins/*"
+        negative: true 
+        actions: "create,update,read,delete"
+      - endpoint: "/admin/*/roles"
+        negative: true 
+        actions: "create,update,read,delete"
+      - endpoint: "/rbac/*"
+        negative: true 
+        actions: "create,update,read,delete"
+    - role: tenant-release-role
+      permissions:
+      - endpoint: "/acls"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/acls/*"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/acls/*/consumer"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/consumers/"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/consumers/*"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/consumers/*/acls"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/consumers/*/acls/*"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/consumers/*/key-auth"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/consumers/*/key-auth/*"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/consumers/*/plugins"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/consumers/*/plugins/*"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/consumer_groups/"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/consumer_groups/*"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/consumer_groups/*/consumers"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/consumer_groups/*/consumers/*"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/consumer_groups/*/overrides/plugins/rate-limiting-advanced/"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/consumer_groups/*/overrides/plugins/rate-limiting-advanced/*"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/key-auths/"
+        negative: false
+        actions: "create,update,read,delete"
+      - endpoint: "/key-auths/*/consumer"
+        negative: false
+        actions: "create,update,read,delete"      
+    plugins:
+    - name: "file-log"
+      config:
+        path: /dev/stdout
+        reopen: false
+    - name: "rate-limiting-advanced"
+      config:
+        limit:
+          - 10
+          - 20
+        window_size:
+          - 60
+          - 120
+        strategy: redis
+        redis:
+          host: redis.kong-hybrid-dp.svc.cluster.local
+          port: 6479
+        sync_rate: 1
+    - name: "correlation-id"
+      config:
+        header_name: Kong-Request-ID
+        generator: "uuid#counter"
+        echo_downstream: false
+  

@@ -91,6 +91,7 @@ node configurator.js [optional: command] [optional: workspacename]
 * workspace - Add Workspace + plugin. 
 * userrs    - Add Users only.
 * groups    - Add Groups only.  
+* roles     - Add Roles only.  
 
 If no workspace is provided, then the script will run for all workspaces in the /config folder.
 
@@ -102,7 +103,9 @@ node configurator.js workspace       (create workspace configs for all workspace
 node configurator.js users demo1     ( add/remove users for demo1).   
 node configurator.js users           ( add/remove users for all).   
 node configurator.js groups  	     ( add groups).   
-node configurator.js groups demo1     ( add groups and apply roles only for workspace demo1). This feature is only available in configurator.js with anchors
+node configurator.js groups demo1    ( add groups and apply roles only for workspace demo1). This feature is only available in configurator.js with anchors
+node configurator.js roles  	     ( add roles). This feature is only available in configurator.js with anchors   
+node configurator.js roles demo1     ( add roles only for workspace demo1). This feature is only available in configurator.js with anchors
 ```
 To use it to add custom roles in default workspace.
 
@@ -123,3 +126,42 @@ To delete an workspace using this tool: -
 ``` node configurator.js wipe demo1 true``` This will force delete workspace demo1 if it's not empty, after giving users an warning and 8 second pause to terminate.
 For force delete to work, enviroment variable FEATURE_FORCE_WIPE_WORKSPACE will need to be set to true
 
+## Known issues
+
+1. when running `node configurator.js groups`, you may get error
+
+    `{workspace} not found. Please verify config. Processing exiting. Checking for group {group}`
+
+    for e.g.
+
+    `workspsce wpb-gb-aditi_group_test_12-dev-ship not found. Please verify config. Processing exiting. Checking for group Infodir-KONG-368705664953-SHP-SHIP-Tenant-Release-User`
+
+	Explanation:
+
+    This error occurs when the workspace specified in the groups command is not found in the configuration. 
+
+
+	Solution:  Pick either of the steps 1 or 2 dependeing on you need missing workspace or not. 
+
+	1. If you think the missing workspace you need it;
+        2.1 create a folder with name such as `workspsce wpb-gb-aditi_group_test_12-dev-ship` under the logical environment for e.g. eu -> dev -> default -> workspsce wpb-gb-aditi_group_test_12-dev-ship and create workspace.yaml file under this folder with necessary configurations.
+        2.2 run `node configurator.js workspace wpb-gb-aditi_group_test_12-dev-ship`
+        2.3 Now run `node configurator.js groups` again.
+	2. If you think the missing workspace is not needed;
+        2.1 Open file `groups-and-roles.yaml` and find the corresponding workspace, make sure that the corresponding workspace and exist. Once you ensure that the workspace exist or remove the mapping from , re-run the script
+    before running the scripts. 
+
+2. Errors Related to Duplicate Permissions in `tenant-release-user.yaml`
+
+	If you encounter errors like the following, it could be due to duplicate permissions in the `tenant-release-user.yaml` file:
+
+	```javascript
+	[ERROR] Error: Request failed with status code 400
+		at createError (/kong-infra-common-workspace-creation-master/node_modules/axios/lib/core/createError.js:16:15)
+		at settle (/kong-infra-common-workspace-creation-master/node_modules/axios/lib/core/settle.js:17:12)
+		at IncomingMessage.handleStreamEnd (/kong-infra-common-workspace-creation-master/node_modules/axios/lib/adapters/http.js:269:11)
+		at IncomingMessage.emit (node:events:524:35)
+		at endReadableNT (node:internal/streams/readable:1359:12)
+		at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+	```
+	Solution: Ensure that there are no duplicate sets of permissions in the tenant-release-user.yaml file. Check the file for any duplicates and remove them. If you encounter any other issues, it's recommended to check the Kong CP logs for further details on the cause of the issue.

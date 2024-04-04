@@ -27,7 +27,7 @@ const max_size_for_workspace_list = "300"
 const log_lib = require(process.env.LOG_LIB
   ? process.env.LOG_LIB
   : "node-color-log");
-const commands = ["all", "workspace", "users", "groups", "wipe"];
+const commands = ["all", "workspace", "users", "groups", "roles", "wipe"];
 (async () => {
   try {
     var workspacename;
@@ -40,11 +40,12 @@ const commands = ["all", "workspace", "users", "groups", "wipe"];
     1 Add Workspace + plugin.
     2 Add Users only. ( For non OIDC Kong Instances only)
     3 Add groups. ( Should run after adding the workspaces first)
+    4 Add roles. ( Should run after adding the workspaces first)
     */
     // With Node Js first command is node and second is the app file name. Any additional command is index position 2.
 
     logInfo(
-      "Command line argument \n all - Default (Add all). \n workspace - Add Workspace + plugin. \n users - Add Users only ( For non OIDC Kong Instances only). \n groups - Add Groups only. \n wipe workspace, optional force delete."
+      "Command line argument \n all - Default (Add all). \n workspace - Add Workspace + plugin. \n users - Add Users only ( For non OIDC Kong Instances only). \n groups - Add Groups only. \n roles - Add Roles only. \n wipe workspace, optional force delete."
     );
 
     //get the command index from the defined commands array
@@ -59,7 +60,7 @@ const commands = ["all", "workspace", "users", "groups", "wipe"];
     }
 
     logInfo("Argument: " + command);
-    if (!["0", "1", "2", "3", "4"].includes(command.toString())) {
+    if (!["0", "1", "2", "3", "4", "5"].includes(command.toString())) {
       logError("Invalid argument passed.");
       process.exit("0");
     }
@@ -180,7 +181,7 @@ const commands = ["all", "workspace", "users", "groups", "wipe"];
     }
 
     // none of the below is needed if it's workspace wipe
-    if (command == 4) {
+    if (command == 5) {
       await wipeWorkspace(featureForceWipeWorkspace, kongaddr, headers);
       await logOut(kongaddr,headers);
       process.exit(0);
@@ -255,6 +256,17 @@ const commands = ["all", "workspace", "users", "groups", "wipe"];
                 false
               );
               //res= await applyPlugins(res, kongaddr,workspacedata.name,workSpaceConfig.plugins,headers, false );
+            }
+            if (command == 4) {
+              res = await applyRbac(
+                res,
+                kongaddr,
+                headers,
+                workspacedata.name,
+                workSpaceConfig.rbac,
+                delete_existing_roles,
+                false
+              );
             }
             if (command == 2)
               // users

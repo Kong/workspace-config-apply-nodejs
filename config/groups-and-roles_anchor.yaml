@@ -1,0 +1,21 @@
+---
+role_info:
+  wk_admin: &wk_admin admin
+  readonly_role: &readonly_role readonlyrole
+  tenant_release_role: &tenant_release_role tenant-release-role
+config:
+  - group_name: wpb-admin
+    group_comment: wpb admin group
+    roles:
+      - workspace: wpb
+        role: *wk_admin
+  - group_name: wpb-ReadOnly
+    group_comment: wpb read only group
+    roles:
+      - workspace: wpb
+        role: *readonly_role
+  - group_name: wpb-tenant-release-role
+    group_comment: wpb tenant-release-role group
+    roles:
+      - workspace: wpb
+        role: *tenant_release_role

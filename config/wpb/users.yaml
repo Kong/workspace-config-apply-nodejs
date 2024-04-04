@@ -1,0 +1,17 @@
+---
+- name: demo2read
+  email: demo2read@gmail12.com
+  roles:
+  - readonlyrole
+- name: demo2read2
+  email: demo2read2@gmail12.com
+  roles:
+  - admin
+- name: demo2admin1
+  email: demo2admin1@gmail12.com
+  roles:
+  - superadmin2
+- name: demo2admin2regular
+  email: demo2admin2regular@gmail12.com
+  roles:
+  - admin
