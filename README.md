@@ -104,8 +104,8 @@ node configurator.js users demo1     ( add/remove users for demo1).
 node configurator.js users           ( add/remove users for all).   
 node configurator.js groups  	     ( add groups).   
 node configurator.js groups demo1    ( add groups and apply roles only for workspace demo1). This feature is only available in configurator.js with anchors
-node configurator.js roles  	     ( add roles).   
-node configurator.js roles demo1     ( add roles only for workspace demo1).
+node configurator.js roles  	     ( add roles). This feature is only available in configurator.js with anchors   
+node configurator.js roles demo1     ( add roles only for workspace demo1). This feature is only available in configurator.js with anchors
 ```
 To use it to add custom roles in default workspace.
 
