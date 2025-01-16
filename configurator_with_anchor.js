@@ -364,6 +364,33 @@ const commands = ["all", "workspace", "users", "groups", "roles", "wipe"];
   }
 })();
 
+/**
+ * Creates and manages RBAC users in a specified Kong workspace.
+ *
+ * @param {string} workspaceName - The name of the workspace where RBAC users will be managed.
+ * @param {Array<Object>} usersConfig - An array of user configuration objects, each containing a `name` and `roles`.
+ * @param {string} kongaddr - The base address of the Kong Admin API.
+ * @param {Object} headers - The headers to be used for the API requests, typically containing authentication tokens.
+ * @param {boolean} deleteExistingUsers - A flag indicating whether to delete existing users not present in the configuration.
+ *
+ * @returns {Promise<void>} - A promise that resolves when the operation is complete.
+ *
+ * @throws {Error} - Throws an error if there is an issue processing the workspace RBAC users.
+ *
+ * @example
+ * const workspaceName = 'exampleWorkspace';
+ * const usersConfig = [
+ *   { name: 'user1', roles: ['role1', 'role2'] },
+ *   { name: 'user2', roles: ['role3'] }
+ * ];
+ * const kongaddr = 'http://localhost:8001';
+ * const headers = { Authorization: 'Bearer token' };
+ * const deleteExistingUsers = true;
+ *
+ * createWorkspaceRBACUsers(workspaceName, usersConfig, kongaddr, headers, deleteExistingUsers)
+ *   .then(() => console.log('RBAC users managed successfully'))
+ *   .catch((error) => console.error('Error managing RBAC users:', error));
+ */
 async function createWorkspaceRBACUsers(workspaceName, usersConfig, kongaddr, headers, deleteExistingUsers) {
   try {
     // Fetch existing users in the workspace
