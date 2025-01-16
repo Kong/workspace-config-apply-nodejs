@@ -1,0 +1,4 @@
+---
+- name: wpb-rbac
+  roles:
+  - tenant-release-role

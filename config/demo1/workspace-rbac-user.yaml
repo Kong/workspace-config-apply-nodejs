@@ -1,0 +1,4 @@
+---
+- name: demo1-rbac
+  roles:
+  - workspace-admin
