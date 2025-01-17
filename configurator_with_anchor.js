@@ -392,8 +392,17 @@ const commands = ["all", "workspace", "users", "groups", "roles", "wipe"];
  *   .catch((error) => console.error('Error managing RBAC users:', error));
  */
 async function createWorkspaceRBACUsers(workspaceName, usersConfig, kongaddr, headers, deleteExistingUsers) {
+  const outputFile = path.resolve(__dirname, "workspace_users.json"); // Define the JSON file path
+  let workspaceData = {};
+  // Load existing data from the JSON file if it exists
+  if (fs.existsSync(outputFile)) {
+    try {
+      workspaceData = JSON.parse(fs.readFileSync(outputFile, "utf-8"));
+    } catch (error) {
+      logError("Error reading the JSON file:", error.message);
+    }
+  }
   try {
-    // Fetch existing users in the workspace
     let currentUsers = [];
     try {
       const response = await axios.get(`${kongaddr}/${workspaceName}/rbac/users`, headers);
@@ -416,13 +425,24 @@ async function createWorkspaceRBACUsers(workspaceName, usersConfig, kongaddr, he
       }
       if (!userExists || userExists.status !== 200) {
         try {
-          // Create the RBAC user
           await axios.post(
             `${kongaddr}/${workspaceName}/rbac/users`,
             { name: user.name, user_token: user.name }, // Assuming user_token is set to the user's name
             headers
           );
           logInfo(`RBAC user '${user.name}' created in workspace '${workspaceName}'.`);
+          if (!workspaceData[workspaceName]) {
+            workspaceData[workspaceName] = [];
+          }
+          workspaceData[workspaceName].push({
+            username: user.name,
+          });
+          try {
+            fs.writeFileSync(outputFile, JSON.stringify(workspaceData, null, 2));
+            logInfo(`Workspace users logged to ${outputFile}`);
+          } catch (err) {
+            logError(`Failed to write to ${outputFile}:`, err.message);
+          }
         } catch (error) {
           logError(
             `Failed to create RBAC user '${user.name}' in workspace '${workspaceName}':`,
@@ -470,6 +490,13 @@ async function createWorkspaceRBACUsers(workspaceName, usersConfig, kongaddr, he
           );
         }
       }
+    }
+    // Always write updated data, even if no new users are created
+    try {
+      fs.writeFileSync(outputFile, JSON.stringify(workspaceData, null, 2));
+      logInfo(`Final workspace users logged to ${outputFile}`);
+    } catch (err) {
+      logError(`Failed to write final data to ${outputFile}:`, err.message);
     }
   } catch (error) {
     logError("Error processing workspace RBAC users:", error.message);

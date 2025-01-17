@@ -2,3 +2,8 @@
 - name: demo1-rbac
   roles:
   - workspace-admin
+- name: demo1-xyz-rbac
+  roles:
+  - readonlyrole
+  - workspace-admin 
+  - admin
