@@ -54,6 +54,7 @@ export BASE64_UID_PWD=<base64 password>
 * LOG_LIB= node-color-log (logging lib)  
 * FEATURE_DELETE_EXISTING_USERS=false (if true, will remove admin users from workspace that are not present in users.yaml)  
 * FEATURE_DELETE_EXISTING_ROLES=false ( if true, will remove existing roles from workspace that are not present in workspace.yaml. setting it true will not be allowed for running aginst default workspace that will cause Kong to work incorrectly. )
+* FEATURE_DELETE_EXISTING_RBAC_USERS=true (if true(default), will remove existing RBAC users from workspace that are not present in workspace-rbac-user.yaml.)
 * PROXY=Any forwward proxy to set for the tool to access the Admin API. Example: http://proxyhost:port. Default NOT SET.
 
 

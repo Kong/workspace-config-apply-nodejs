@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1
+
+🆕 New features:
+- Ability to add workspace scoped RBAC user with token as UUID.
+
 ## 0.0.1
 
 💥 Breaking changes:
