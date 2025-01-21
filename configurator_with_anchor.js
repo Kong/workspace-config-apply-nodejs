@@ -4,6 +4,7 @@ const axios = require("axios");
 require("dotenv").config();
 const https = require("https");
 const path = require("path");
+const { v4: uuidv4 } = require('uuid');
 
 const workspaceEndpoint = "/workspaces";
 const rbacEndpoint = "/rbac";
@@ -19,6 +20,7 @@ const metaEndpoint = "/meta";
 const workSpaceConfigName = "workspace.yaml";
 const pluginConfigName = "plugins.yaml";
 const userNameConfigName = "users.yaml";
+const workSpaceRBACUsersConfigName = "workspace-rbac-user.yaml";
 const rootWorkSpaceConfig = "root-workspace.yaml";
 const groupConfig = "groups-and-roles.yaml";
 const cookier_header_name = "admin_session";
@@ -172,6 +174,11 @@ const commands = ["all", "workspace", "users", "groups", "roles", "wipe"];
       delete_existing_roles =
         process.env.FEATURE_DELETE_EXISTING_ROLES === "true";
     }
+    let deleteExistingUsers = true;
+    if (process.env.FEATURE_DELETE_EXISTING_RBAC_USERS) {
+      deleteExistingUsers =
+        process.env.FEATURE_DELETE_EXISTING_RBAC_USERS === "true";
+    }
 
     // FEATURE_FORCE_WIPE_WORKSPACE true will wipe an worksapce even if there are entities present. USE WITH CAUTION.
     let featureForceWipeWorkspace = false;
@@ -223,8 +230,9 @@ const commands = ["all", "workspace", "users", "groups", "roles", "wipe"];
           "utf8"
         );
         // var userNameConfig = yaml.load(fs.readFileSync(path.resolve(configDir,dirs[dir],userNameConfigName), 'utf8'));
-
+        var workSpaceRBACUsersConfig =  yaml.load(fs.readFileSync(path.resolve(configDir,dirs[dir],workSpaceRBACUsersConfigName), 'utf8'));
         var workspacedata = { name: dirs[dir], config: workSpaceConfig.config };
+        var workspaceRBACUsersData = { name: dirs[dir], config: workSpaceRBACUsersConfig };
         var res = "";
 
         try {
@@ -255,6 +263,16 @@ const commands = ["all", "workspace", "users", "groups", "roles", "wipe"];
                 delete_existing_roles,
                 false
               );
+              /**
+               * Onboard workspace scoped rbac users
+               */
+              res = await applyWorkspaceRBACUsers(
+                workspacedata.name,
+                workspaceRBACUsersData.config,
+                kongaddr,
+                headers,
+                deleteExistingUsers
+              )
               //res= await applyPlugins(res, kongaddr,workspacedata.name,workSpaceConfig.plugins,headers, false );
             }
             if (command == 4) {
@@ -304,6 +322,16 @@ const commands = ["all", "workspace", "users", "groups", "roles", "wipe"];
                   workSpaceConfig.rbac,
                   delete_existing_roles
                 );
+                /**
+                 * Onboard workspace scoped rbac users
+                 */
+                res = await applyWorkspaceRBACUsers(
+                  workspacedata.name,
+                  workspaceRBACUsersData.config,
+                  kongaddr,
+                  headers,
+                  deleteExistingUsers
+                )
                 //res= await applyPlugins(res, kongaddr,workspacedata.name,workSpaceConfig.plugins,headers );
               } catch (e) {
                 logError(e);
@@ -336,6 +364,118 @@ const commands = ["all", "workspace", "users", "groups", "roles", "wipe"];
     logError(e.stack);
   }
 })();
+
+/**
+ * Creates and manages RBAC users in a specified Kong workspace.
+ *
+ * @param {string} workspaceName - The name of the workspace where RBAC users will be managed.
+ * @param {Array<Object>} usersConfig - An array of user configuration objects, each containing a `name` and `roles`.
+ * @param {string} kongaddr - The base address of the Kong Admin API.
+ * @param {Object} headers - The headers to be used for the API requests, typically containing authentication tokens.
+ * @param {boolean} deleteExistingUsers - A flag indicating whether to delete existing users not present in the configuration.
+ *
+ * @returns {Promise<void>} - A promise that resolves when the operation is complete.
+ *
+ * @throws {Error} - Throws an error if there is an issue processing the workspace RBAC users.
+ *
+ * @example
+ * const workspaceName = 'exampleWorkspace';
+ * const usersConfig = [
+ *   { name: 'user1', roles: ['role1', 'role2'] },
+ *   { name: 'user2', roles: ['role3'] }
+ * ];
+ * const kongaddr = 'http://localhost:8001';
+ * const headers = { Authorization: 'Bearer token' };
+ * const deleteExistingUsers = true;
+ *
+ * applyWorkspaceRBACUsers(workspaceName, usersConfig, kongaddr, headers, deleteExistingUsers)
+ *   .then(() => console.log('RBAC users managed successfully'))
+ *   .catch((error) => console.error('Error managing RBAC users:', error));
+ */
+async function applyWorkspaceRBACUsers(workspaceName, usersConfig, kongaddr, headers, deleteExistingUsers) {  
+  try {
+    let currentUsers = [];
+    try {
+      const response = await axios.get(`${kongaddr}/${workspaceName}/rbac/users`, headers);
+      currentUsers = response.data.data.map((user) => user.name);
+    } catch (err) {
+      logError(`Failed to fetch existing users in workspace '${workspaceName}':`, err.response?.data || err.message);
+      return;
+    }
+    const configUserNames = usersConfig.map((user) => user.name);
+    logInfo(`Current RBAC users in workspace '${workspaceName}': ${currentUsers.join(", ")}`);
+    // Iterate over each user in the configuration
+    for (const user of usersConfig) {
+      const userEndpoint = `${kongaddr}/${workspaceName}/rbac/users/${user.name}`;
+      let userExists;
+      // Check if the user already exists
+      try {
+        userExists = await axios.get(userEndpoint, headers);
+      } catch (err) {
+        userExists = null;
+      }
+      if (!userExists || userExists.status !== 200) {
+        try {
+          const userToken = uuidv4(); // Generate a new UUID for the user_token          
+          await axios.post(
+            `${kongaddr}/${workspaceName}/rbac/users`,
+            { name: user.name, user_token: userToken },
+            headers
+          );
+          logInfo(`RBAC user '${user.name}' created in workspace '${workspaceName}'.`);
+          
+        } catch (error) {
+          logError(
+            `Failed to create RBAC user '${user.name}' in workspace '${workspaceName}':`,
+            error.response?.data || error.message
+          );
+          continue; // Skip to the next user if creation fails
+        }
+      } else {
+        logWarn(`RBAC user '${user.name}' already exists in workspace '${workspaceName}'.`);
+      }
+      // Assign roles to the user
+      for (const role of user.roles) {
+        try {
+          await axios.post(
+            `${kongaddr}/${workspaceName}/rbac/users/${user.name}/roles`,
+            { roles: role },
+            headers
+          );
+          logInfo(`Role '${role}' assigned to user '${user.name}' in workspace '${workspaceName}'.`);
+        } catch (error) {
+          logError(
+            `Failed to assign role '${role}' to RBAC user '${user.name}' in workspace '${workspaceName}':`,
+            error.response?.data || error.message
+          );
+        }
+      }
+    }
+    // Delete users not in the configuration if deleteExistingUsers is true
+    if (deleteExistingUsers) {
+      if (workspaceName === "default") {
+        logError(
+          "Deleting users in the 'default' workspace is strongly discouraged. Use the admin API or UI for manual deletion."
+        );
+        return;
+      }
+      const usersToDelete = currentUsers.filter((user) => !configUserNames.includes(user));
+      for (const user of usersToDelete) {
+        try {
+          await axios.delete(`${kongaddr}/${workspaceName}/rbac/users/${user}`, headers);
+          logWarn(`RBAC user '${user}' deleted from workspace '${workspaceName}' as it is not in the configuration.`);
+        } catch (error) {
+          logError(
+            `Failed to delete RBAC user '${user}' from workspace '${workspaceName}':`,
+            error.response?.data || error.message
+          );
+        }
+      }
+    }    
+  } catch (error) {
+    logError("Error processing workspace RBAC users:", error.message);
+  }
+}
 
 async function applyRbac(
   res,

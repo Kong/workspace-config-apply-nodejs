@@ -1,0 +1,4 @@
+---
+- name: rename-this-to-default-rbac
+  roles:
+  - custom-read-only
