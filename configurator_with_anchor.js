@@ -174,9 +174,13 @@ const commands = ["all", "workspace", "users", "groups", "roles", "wipe"];
       delete_existing_roles =
         process.env.FEATURE_DELETE_EXISTING_ROLES === "true";
     }
-    let deleteExistingUsers = true;
+    // create RBAC users?
+    let createRBACUsers = process.env.FEATURE_CREATE_RBAC_USERS === "true";
+
+    // delete existing RBAC users?
+    let deleteExistingRBACUsers = true;
     if (process.env.FEATURE_DELETE_EXISTING_RBAC_USERS) {
-      deleteExistingUsers =
+      deleteExistingRBACUsers =
         process.env.FEATURE_DELETE_EXISTING_RBAC_USERS === "true";
     }
 
@@ -230,11 +234,14 @@ const commands = ["all", "workspace", "users", "groups", "roles", "wipe"];
           "utf8"
         );
         // var userNameConfig = yaml.load(fs.readFileSync(path.resolve(configDir,dirs[dir],userNameConfigName), 'utf8'));
-        var workSpaceRBACUsersConfig =  yaml.load(fs.readFileSync(path.resolve(configDir,dirs[dir],workSpaceRBACUsersConfigName), 'utf8'));
         var workspacedata = { name: dirs[dir], config: workSpaceConfig.config };
-        var workspaceRBACUsersData = { name: dirs[dir], config: workSpaceRBACUsersConfig };
         var res = "";
-
+        var workSpaceRBACUsersConfig;
+        var workspaceRBACUsersData;
+        if (createRBACUsers) {
+          workSpaceRBACUsersConfig =  yaml.load(fs.readFileSync(path.resolve(configDir,dirs[dir],workSpaceRBACUsersConfigName), 'utf8'));
+          workspaceRBACUsersData = { name: dirs[dir], config: workSpaceRBACUsersConfig };
+        }
         try {
           res = await axios.get(
             kongaddr + workspaceEndpoint + "/" + workspacedata.name,
@@ -264,15 +271,20 @@ const commands = ["all", "workspace", "users", "groups", "roles", "wipe"];
                 false
               );
               /**
-               * Onboard workspace scoped rbac users
-               */
-              res = await applyWorkspaceRBACUsers(
+                 * Onboard workspace scoped rbac users, only if createRBACUsers is set to true
+                 */
+              if (createRBACUsers) {
+                logWarn(
+                  "FEATURE_CREATE_RBAC_USERS is set to true. This will create RBAC users in the workspace - " + workspacedata.name
+                );
+                res = await applyWorkspaceRBACUsers(
                 workspacedata.name,
                 workspaceRBACUsersData.config,
                 kongaddr,
                 headers,
-                deleteExistingUsers
-              )
+                deleteExistingRBACUsers
+                );
+              }
               //res= await applyPlugins(res, kongaddr,workspacedata.name,workSpaceConfig.plugins,headers, false );
             }
             if (command == 4) {
@@ -323,15 +335,17 @@ const commands = ["all", "workspace", "users", "groups", "roles", "wipe"];
                   delete_existing_roles
                 );
                 /**
-                 * Onboard workspace scoped rbac users
-                 */
-                res = await applyWorkspaceRBACUsers(
+                   * Onboard workspace scoped rbac users, only if createRBACUsers is set to true
+                   */
+                if (createRBACUsers) {
+                  res = await applyWorkspaceRBACUsers(
                   workspacedata.name,
                   workspaceRBACUsersData.config,
                   kongaddr,
                   headers,
-                  deleteExistingUsers
-                )
+                  deleteExistingRBACUsers
+                  );
+                }
                 //res= await applyPlugins(res, kongaddr,workspacedata.name,workSpaceConfig.plugins,headers );
               } catch (e) {
                 logError(e);
@@ -372,7 +386,7 @@ const commands = ["all", "workspace", "users", "groups", "roles", "wipe"];
  * @param {Array<Object>} usersConfig - An array of user configuration objects, each containing a `name` and `roles`.
  * @param {string} kongaddr - The base address of the Kong Admin API.
  * @param {Object} headers - The headers to be used for the API requests, typically containing authentication tokens.
- * @param {boolean} deleteExistingUsers - A flag indicating whether to delete existing users not present in the configuration.
+ * @param {boolean} deleteExistingRBACUsers - A flag indicating whether to delete existing users not present in the configuration.
  *
  * @returns {Promise<void>} - A promise that resolves when the operation is complete.
  *
@@ -386,13 +400,13 @@ const commands = ["all", "workspace", "users", "groups", "roles", "wipe"];
  * ];
  * const kongaddr = 'http://localhost:8001';
  * const headers = { Authorization: 'Bearer token' };
- * const deleteExistingUsers = true;
+ * const deleteExistingRBACUsers = true;
  *
- * applyWorkspaceRBACUsers(workspaceName, usersConfig, kongaddr, headers, deleteExistingUsers)
+ * applyWorkspaceRBACUsers(workspaceName, usersConfig, kongaddr, headers, deleteExistingRBACUsers)
  *   .then(() => console.log('RBAC users managed successfully'))
  *   .catch((error) => console.error('Error managing RBAC users:', error));
  */
-async function applyWorkspaceRBACUsers(workspaceName, usersConfig, kongaddr, headers, deleteExistingUsers) {  
+async function applyWorkspaceRBACUsers(workspaceName, usersConfig, kongaddr, headers, deleteExistingRBACUsers) {  
   try {
     let currentUsers = [];
     try {
@@ -422,8 +436,7 @@ async function applyWorkspaceRBACUsers(workspaceName, usersConfig, kongaddr, hea
             { name: user.name, user_token: userToken },
             headers
           );
-          logInfo(`RBAC user '${user.name}' created in workspace '${workspaceName}'.`);
-          
+          logInfo(`RBAC user '${user.name}' created in workspace '${workspaceName}'.`);          
         } catch (error) {
           logError(
             `Failed to create RBAC user '${user.name}' in workspace '${workspaceName}':`,
@@ -451,11 +464,11 @@ async function applyWorkspaceRBACUsers(workspaceName, usersConfig, kongaddr, hea
         }
       }
     }
-    // Delete users not in the configuration if deleteExistingUsers is true
-    if (deleteExistingUsers) {
+    // Delete users not in the configuration if deleteExistingRBACUsers is true
+    if (deleteExistingRBACUsers) {
       if (workspaceName === "default") {
         logError(
-          "Deleting users in the 'default' workspace is strongly discouraged. Use the admin API or UI for manual deletion."
+          "Deleting RBAC users in the 'default' workspace is strongly discouraged. Use the admin API or UI for manual deletion."
         );
         return;
       }
