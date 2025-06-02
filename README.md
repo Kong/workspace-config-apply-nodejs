@@ -99,16 +99,18 @@ If no workspace is provided, then the script will run for all workspaces in the 
 
 ## Examples
 
-```
-node configurator.js workspace demo1 (create workspace for demo1).    
-node configurator.js workspace       (create workspace configs for all workspaces).   
-node configurator.js users demo1     ( add/remove users for demo1).   
-node configurator.js users           ( add/remove users for all).   
-node configurator.js groups  	     ( add groups).   
-node configurator.js groups demo1    ( add groups and apply roles only for workspace demo1). This feature is only available in configurator.js with anchors
-node configurator.js roles  	     ( add roles). This feature is only available in configurator.js with anchors
-node configurator.js roles demo1     ( add roles only for workspace demo1). This feature is only available in configurator.js with anchors
-```
+| CLI Command                                             | Description                                                                                 |
+|---------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| `node configurator.js workspace demo1`                  | Create workspace for `demo1`                                                                |
+| `node configurator.js workspace`                        | Create workspace configs for all workspaces                                                 |
+| `node configurator.js users demo1`                      | Add/remove users for `demo1`                                                                |
+| `node configurator.js users`                            | Add/remove users for all workspaces                                                         |
+| `node configurator.js groups`                           | Add groups                                                                                  |
+| `node configurator.js groups demo1`                     | Add groups and apply roles only for workspace `demo1` (available only in `configurator.js` with anchors) |
+| `node configurator.js roles`                            | Add all roles for all workspaces (available only in `configurator.js` with anchors)         |
+| `node configurator.js roles <RoleName>`                 | Add a specific role for all workspaces (available only in `configurator.js` with anchors)   |
+| `node configurator.js roles <RoleName> demo1`           | Add a specific role only for workspace `demo1` (available only in `configurator.js` with anchors) |
+
 > [!CAUTION]  
 > After running the roles command, make sure to run either `node configurator.js groups` or `node configurator.js groups demo1` (specific to workspace) to map groups to roles. Failure to do so may result in missing group and role associations. 
 

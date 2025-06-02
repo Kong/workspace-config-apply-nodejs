@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.2.2
+
+🆕 New features:
+- Ability to run roles per role and per workspace, for example:
+
+| CLI Input                                                           | Behavior                                                  |
+|---------------------------------------------------------------------|-----------------------------------------------------------|
+| `node configurator.js roles`                                        | Runs all roles for all workspaces                         |
+| `node configurator.js roles Tenant-Release-User`                    | Runs `Tenant-Release-User` role for all workspaces        |
+| `node configurator.js roles Tenant-Release-User wpb-eu-cem-onboarding-dev-ship` | Runs `Tenant-Release-User` role for `wpb-eu-cem-onboarding-dev-ship` workspace |
+| _All existing commands_                                             | Continue to behave as before                              |
+
+
 ## 1.2.1
 
 🆕 New features:

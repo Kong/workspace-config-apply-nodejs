@@ -514,35 +514,51 @@ async function applyRbac(
   logInfo("Applying roles now for workspace " + workspacename);
 
   if (!isNew && delete_existing_roles) {
-    // existing workspace but not default.. delete the current role.
-    logWarn(
-      "Deleting current roles. If you do not want this set FEATURE_DELETE_EXISTING_ROLES to false and run again. Execution will pause for few seconds to allow stop. Kong strongly recommends not to delete existing roles in 'default' workspace using this tool"
-    );
-    await new Promise((resolve) => setTimeout(resolve, 8000));
-    if (workspacename == "default") {
+    const isDefaultWorkspace = workspacename === "default";
+    if (isDefaultWorkspace) {
       logError(
         "Kong strongly recommends not to delete existing roles in 'default' using this tool"
       );
       process.exit(2);
     }
-    var currentRoles = await axios.get(
-      kongaddr + "/" + workspacename + rbacEndpoint + rolesEndpoint,
-      headers
-    );
-    for (var oldRole of currentRoles.data.data) {
-      res = await axios.delete(
-        kongaddr +
-          "/" +
-          workspacename +
-          rbacEndpoint +
-          rolesEndpoint +
-          "/" +
-          oldRole.name,
-        headers
+    if (rolename) {
+      logWarn(
+        `Deleting only the role '${rolename}' from workspace '${workspacename}'.`
       );
+      try {
+        await axios.delete(
+          `${kongaddr}/${workspacename}${rbacEndpoint}${rolesEndpoint}/${rolename}`,
+          headers
+        );
+        logInfo(`Deleted role '${rolename}' successfully.`);
+      } catch (error) {
+        const msg = error.response?.data?.message || error.message;
+        logError(`Failed to delete role '${rolename}': ${msg}`);
+      }
+    } else {
+      logWarn(
+        "Deleting current roles. If you do not want this set FEATURE_DELETE_EXISTING_ROLES to false and run again. Execution will pause for few seconds to allow stop. Kong strongly recommends not to delete existing roles in 'default' workspace using this tool"
+      );
+      await new Promise((resolve) => setTimeout(resolve, 8000));
+      try {
+        const response = await axios.get(
+          `${kongaddr}/${workspacename}${rbacEndpoint}${rolesEndpoint}`,
+          headers
+        );
+        const currentRoles = response.data?.data || [];
+        for (const oldRole of currentRoles) {
+          await axios.delete(
+            `${kongaddr}/${workspacename}${rbacEndpoint}${rolesEndpoint}/${oldRole.name}`,
+            headers
+          );
+          logInfo(`Deleted role '${oldRole.name}' successfully.`);
+        }
+      } catch (error) {
+        const msg = error.response?.data?.message || error.message;
+        logError(`Failed to fetch or delete roles: ${msg}`);
+      }
     }
   }
-
   try {
     for (var roleDetail of rbac) {
       // If rolename is passed as argument, skip roles not matching it
