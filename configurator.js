@@ -488,7 +488,7 @@ async function applyPlugins(res, kongaddr, workspacename, plugins, headers, isNe
 
    if(!isNew){ // existing workspace.
    
-    var currentPlugins = await axios.get(kongaddr + '/' + workspacename + pluginsEndpoint, headers);
+    var currentPlugins = await axios.get(kongaddr + '/' + workspacename + pluginsEndpoint + '?size=1000', headers);
       for (var oldPlugin of currentPlugins.data.data) {
         if (oldPlugin.route == null && oldPlugin.service == null) {
           res = await axios.delete(kongaddr + '/' + workspacename + pluginsEndpoint + '/' + oldPlugin.id, headers);
