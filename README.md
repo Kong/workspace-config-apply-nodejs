@@ -1,3 +1,10 @@
+> [!WARNING]
+> **This repository is archived and no longer maintained.**
+>
+> Kong Gateway now supports workspaces, RBAC and other capabilities through the
+> official Terraform provider, so use that instead:
+> https://registry.terraform.io/providers/Kong/kong-gateway/latest
+
 # workspace-config-apply-nodejs
 
 A node js module for managing RBAC, Users and Global plugins in Workspace in Kong
